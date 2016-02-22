@@ -1,7 +1,6 @@
 #!/usr/bin/perl
 
-# I don't know if this is a legally binding copyright, but
-# Copyright 2016 oldtechaa (Easily found on the Internet.)
+# Copyright 2016 oldtechaa <oldtechaa@gmail.com>
 # This software is licensed under the Perl license. (That means Artistic v1 or GPLv1.)
 
 use strict;
