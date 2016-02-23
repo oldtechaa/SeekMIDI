@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 # Copyright 2016 oldtechaa <oldtechaa@gmail.com>
-# This software is licensed under the Perl license. (That means Artistic v1 or GPLv1.)
+# This software is licensed under the Perl license. (That means Artistic v1 or GPL-1+.)
 
 use strict;
 use warnings;

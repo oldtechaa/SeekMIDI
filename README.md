@@ -1,6 +1,6 @@
 ### What is this repository for? ###
 
-This is the home of SeekMIDI, a simple, lightweight, cross-platform MIDI sequencer.
+This is the home of SeekMIDI, a simple, lightweight, MIDI sequencer.
 
 ### How do I get set up? ###
 
