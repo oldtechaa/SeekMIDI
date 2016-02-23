@@ -4,7 +4,7 @@ This is the home of SeekMIDI, a simple, lightweight, cross-platform MIDI sequenc
 
 ### How do I get set up? ###
 
-At the moment, full setup is not documented, but it should just be a matter of running "perl MIDway.pl".
+At the moment, full setup is not documented, but it should just be a matter of running "perl SeekMIDI.pl".
 
 ### Contribution guidelines ###
 
