@@ -36,7 +36,9 @@ foreach (@evtLines) {
 };
 
 # This can be changed around to reflect whatever type of track and file we need
-midiWrite(\@events, 96, "Milestone1Test2.mid");
+midiWrite(\@events, 96, "Milestone2.mid");
+
+0;
 
 #my $events = [
 #	['patch_change',    0, 0,  19],
