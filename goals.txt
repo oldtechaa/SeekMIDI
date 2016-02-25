@@ -1,6 +1,6 @@
 Milestone 1 - Output to MIDI file. ACHIEVED!
 Milestone 2 - Input from events file to MIDI file. ACHIEVED!
-Milestone 3 - Get GUI.
+Milestone 3 - Get GUI. ACHIEVED!
 Milestone 4 - Add GUI widgets.
 Milestone 5 - Add central event editor widget.
 Milestone 6 - Get a working output from GUI.

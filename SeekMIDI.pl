@@ -7,6 +7,7 @@ use strict;
 use warnings;
 
 use MIDI;
+use Gtk2 -init;
 
 # writes the MIDI output to a file based on the list of events and the filename
 sub midiWrite {
@@ -19,24 +20,30 @@ sub midiWrite {
 	$midiPiece->write_to_file($midiFile);
 };
 
-# reads from the event file (future capability, not sure if I'll add it or not) This is just for testing, to reach Milestone2.
+# reads from the event file (future capability, not sure if it will be added) This is just for testing, to reach Milestone2.
+# would mainly be useful if there was ever a CLI version or if the GUI version had the capability to read non-MIDI projects.
 sub evtOpen {
 	my $evtFile = shift;
+	my @events;
+
 	open(my $evtHandle, "<", $evtFile);
-	
 	my @evtLines = <$evtHandle>;
-	return \@evtLines;
-};
 
-my @evtLines = @{evtOpen("events.in")};
-my @events;
+	foreach (@evtLines) {
+		push(@events, [split(/,\s*/, $_)]);
+	};
 
-foreach (@evtLines) {
-	push(@events, [split(/,\s*/, $_)]);
+	return \@events;
 };
 
 # This can be changed around to reflect whatever type of track and file we need
-midiWrite(\@events, 96, "Milestone2.mid");
+# midiWrite(evtOpen("events.in"), 96, "Milestone2.mid");
+
+my $window = Gtk2::Window->new();
+$window->set_title("SeekMIDI MIDI Sequencer");
+$window->signal_connect(destroy => sub{Gtk2->main_quit;});
+$window->show_all();
+Gtk2->main;
 
 0;
 
