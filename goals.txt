@@ -4,4 +4,6 @@ Milestone 3 - Get GUI. ACHIEVED!
 Milestone 4 - Add GUI widgets.
 Milestone 5 - Add central event editor widget.
 Milestone 6 - Get a working output from GUI.
-Milestone 7 - Clean things up and add foolproofing.
+Milestone 7 - Add capability for more complex files.
+Milestone 8 - Add foolproofing.
+Milestone 9 - Clean things up.
