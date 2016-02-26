@@ -41,9 +41,19 @@ sub evtOpen {
 
 my $window = Gtk2::Window->new();
 $window->set_title("SeekMIDI MIDI Sequencer");
-$window->signal_connect(destroy => sub{Gtk2->main_quit;});
+
+my $controlHBox = Gtk2::HBox->new(0, 6);
+$window->add($controlHBox);
+
+my $fileLabel = Gtk2::Label->new("Output Filename:");
+$controlHBox->pack_start($fileLabel, 1, 1, 0);
+
+my $fileEntry = Gtk2::Entry->new();
+$controlHBox->pack_start($fileEntry, 1, 1, 0);
+$window->signal_connect(destroy => sub{midiWrite(evtOpen("events.in"), 96, $fileEntry->get_text()); Gtk2->main_quit();});
+
 $window->show_all();
-Gtk2->main;
+Gtk2->main();
 
 0;
 
