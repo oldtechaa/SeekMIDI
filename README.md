@@ -4,7 +4,7 @@ This is the home of SeekMIDI, a simple, lightweight MIDI sequencer.
 
 ### How do I get set up? ###
 
-At the moment, full setup is not documented, but it should just be a matter of running "perl SeekMIDI.pl". Be careful if testing the current master, because an empty value in the GtkEntry will not allow the program to die correctly.
+At the moment, full setup is not documented, but it should just be a matter of running "perl SeekMIDI.pl". Libmidi-perl and libgtk2-perl, or the equivalent on non-Debian systems, must be installed. An empty filename value may crash the program.
 
 ### Contribution guidelines ###
 
