@@ -5,9 +5,11 @@ This is the home of SeekMIDI, a simple, lightweight MIDI sequencer.
 ### How do I get set up? ###
 
 Dependencies:
-libmidi-perl/perl-midi-perl on Debian/Arch respectively. perl-midi-perl must be installed from the AUR on Arch. For convenience on other distributions which do not package the library, the MIDI modules are provided in tarball form. Extract the tarball, then follow the README to install.
-libgtk2-perl or its equivalent in other distributions. For example, in Arch, it is gtk2-perl.
-perl5
+ * libmidi-perl/perl-midi-perl on Debian/Arch respectively. perl-midi-perl must be installed from the AUR on Arch. For convenience on other distributions which do not package the library, the MIDI modules are provided in tarball form. Extract the tarball, then follow the README to install.
+
+ * libgtk2-perl or its equivalent in other distributions. For example, in Arch, it is gtk2-perl.
+
+ * perl5
 
 Once set up, run "perl SeekMIDI.pl" in the folder containing SeekMIDI to run the program.
 
