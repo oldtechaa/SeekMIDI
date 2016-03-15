@@ -6,6 +6,34 @@
 use strict;
 use warnings;
 
+package Gtk2::MIDIPlot;
+
+use Gtk2;
+use base 'Gtk2::DrawingArea';
+use Cairo;
+
+sub new {
+  my $class = shift;
+  my $this = bless Gtk2::DrawingArea->new(), $class;
+
+  $this->signal_connect(expose_event => 'Gtk2::MIDIPlot::draw');
+
+  return $this;
+}
+
+sub draw {
+  my $drawArea = shift;
+
+  $drawArea->set_size_request(14400, 768);
+  my $thisCairoSurface = Gtk2::Gdk::Cairo::Context->create($drawArea->get_window());
+
+  $thisCairoSurface->move_to(6, 0);
+  $thisCairoSurface->line_to(6, 768);
+  $thisCairoSurface->stroke();
+}
+
+package main;
+
 use MIDI;
 use Gtk2 -init;
 
@@ -20,7 +48,7 @@ sub midiWrite {
 	$midiPiece->write_to_file($midiFile);
 };
 
-# reads from the event file (future capability, not sure if it will be added) This is just for testing, to reach Milestone2.
+# reads from the event file (future capability, not sure if it will be added) This is just for testing, to reach early milestones without an event entry control.
 # would mainly be useful if there was ever a CLI version or if the GUI version had the capability to read non-MIDI projects.
 sub evtOpen {
 	my $evtFile = shift;
@@ -57,6 +85,19 @@ $controlHBox->pack_start($fileEntry, 0, 0, 0);
 my $saveButton = Gtk2::Button->new("_Save");
 $controlHBox->pack_start($saveButton, 0, 0, 0);
 $saveButton->signal_connect(clicked => sub{midiWrite(evtOpen("events.in"), 96, $fileEntry->get_text())});
+
+#my $mainWidgetScroll = Gtk2::ScrolledWindow->new();
+#my $mainWidgetTable = Gtk2::Table->new(128, 128, 1);
+#$mainWidgetScroll->add_with_viewport($mainWidgetTable);
+#$mainVBox->pack_start($mainWidgetScroll, 1, 1, 0);
+
+#my $tableButton = Gtk2::Button->new();
+#$mainWidgetTable->attach($tableButton, 0, 1, 0, 1, "expand", "expand", 0, 0);
+
+my $mainWidgetScroll = Gtk2::ScrolledWindow->new();
+my $mainWidget = Gtk2::MIDIPlot->new();
+$mainWidgetScroll->add_with_viewport($mainWidget);
+$mainVBox->pack_start($mainWidgetScroll, 1, 1, 0);
 
 $window->signal_connect(destroy => sub{Gtk2->main_quit()});
 $window->show_all();
