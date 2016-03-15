@@ -17,19 +17,46 @@ sub new {
   my $this = bless Gtk2::DrawingArea->new(), $class;
 
   $this->signal_connect(expose_event => 'Gtk2::MIDIPlot::draw');
+  $this->signal_connect(button_press_event => 'Gtk2::MIDIPlot::button_press');
+
+  $this->set_events("button-press-mask");
 
   return $this;
 }
 
 sub draw {
-  my $drawArea = shift;
+  my $this = shift;
 
-  $drawArea->set_size_request(14400, 768);
-  my $thisCairoSurface = Gtk2::Gdk::Cairo::Context->create($drawArea->get_window());
+  $this->set_size_request(28800, 1536);
+  my $thisCairo = Gtk2::Gdk::Cairo::Context->create($this->get_window());
 
-  $thisCairoSurface->move_to(6, 0);
-  $thisCairoSurface->line_to(6, 768);
-  $thisCairoSurface->stroke();
+  $thisCairo->set_line_width(1);
+  $thisCairo->set_source_rgb(0.75, 0.75, 0.75);
+  my $inc;
+  for ($inc = 0; $inc <= 2400; $inc++) {
+    $thisCairo->move_to($inc * 12, 0);
+    $thisCairo->line_to($inc * 12, 1536);
+  };
+  for ($inc = 0; $inc <= 128; $inc++) {
+    $thisCairo->move_to(0, $inc * 12);
+    $thisCairo->line_to(28800, $inc * 12);
+  };
+  $thisCairo->stroke();
+}
+
+sub button_press {
+  my $this = shift;
+  my $event = shift;
+
+  if ($event->button == 1) {
+    my $x = $event->x;
+    my $y = $event->y;
+
+    my $thisCairo = Gtk2::Gdk::Cairo::Context->create($this->get_window());
+    $thisCairo->rectangle($x - ($x % 12), $y - ($y % 12), 12, 12);
+    $thisCairo->fill();
+    $thisCairo->stroke();
+  };
 }
 
 package main;
