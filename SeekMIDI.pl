@@ -121,33 +121,38 @@ sub evtOpen {
 	return \@events;
 };
 
-# We currently don't actually write out MIDI data. We're working on the custom widget.
-# midiWrite(evtOpen("events.in"), 96, "Milestone2.mid");
-
+# creates window with title
 my $window = Gtk2::Window->new();
 $window->set_title("SeekMIDI MIDI Sequencer");
 
+# creates VBox for widgets along the top and the main widget area below
 my $mainVBox = Gtk2::VBox->new(0, 6);
 $window->add($mainVBox);
 
+# creates HBox for widgets along the top
 my $controlHBox = Gtk2::HBox->new(0, 6);
 $mainVBox->pack_start($controlHBox, 0, 0, 0);
 
+# creates label for filename entry
 my $fileLabel = Gtk2::Label->new("Output Filename:");
 $controlHBox->pack_start($fileLabel, 0, 0, 0);
 
+# creates filename entry field
 my $fileEntry = Gtk2::Entry->new();
 $controlHBox->pack_start($fileEntry, 0, 0, 0);
 
+# creates file save button
 my $saveButton = Gtk2::Button->new("_Save");
 $controlHBox->pack_start($saveButton, 0, 0, 0);
 $saveButton->signal_connect(clicked => sub{midiWrite(evtOpen("events.in"), 96, $fileEntry->get_text())});
 
+# creates main widget and its scroll area
 my $mainWidgetScroll = Gtk2::ScrolledWindow->new();
 my $mainWidget = Gtk2::MIDIPlot->new();
 $mainWidgetScroll->add_with_viewport($mainWidget);
 $mainVBox->pack_start($mainWidgetScroll, 1, 1, 0);
 
+# starts up the GUI
 $window->signal_connect(destroy => sub{Gtk2->main_quit()});
 $window->show_all();
 Gtk2->main();
