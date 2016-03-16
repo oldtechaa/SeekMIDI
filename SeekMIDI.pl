@@ -6,56 +6,86 @@
 use strict;
 use warnings;
 
+# custom widget class; separate from main package below
 package Gtk2::MIDIPlot;
 
 use Gtk2;
 use base 'Gtk2::DrawingArea';
 use Cairo;
 
+# makes a global draw object array ref; this array's referencing is complicated
+my $gtkObjects = [];
+
+# sets up the class; asks for the signals we need; sets main widget size
 sub new {
   my $class = shift;
   my $this = bless Gtk2::DrawingArea->new(), $class;
 
-  $this->signal_connect(expose_event => 'Gtk2::MIDIPlot::draw');
-  $this->signal_connect(button_press_event => 'Gtk2::MIDIPlot::button_press');
+  $this->signal_connect(expose_event => 'Gtk2::MIDIPlot::expose');
+  $this->signal_connect(button_press_event => 'Gtk2::MIDIPlot::button');
 
+  # this is needed to receive the button-press event from the GtkWidget
   $this->set_events("button-press-mask");
+
+  $this->set_size_request(28800, 1024);
 
   return $this;
 }
 
-sub draw {
+# refresh handler; handles drawing grid and objects
+sub expose {
   my $this = shift;
 
-  $this->set_size_request(28800, 1536);
+  # makes new Cairo context
   my $thisCairo = Gtk2::Gdk::Cairo::Context->create($this->get_window());
 
-  $thisCairo->set_line_width(1);
+  # sets drawing parameters for main grid
+  # THIS LINE WIDTH SHOULD BE 1. THE LINE WIDTH GETS RESET SOMEWHERE THOUGH, SO THAT NEEDS TO BE FIXED. UNTIL THEN, 2 IT IS.--------FIXME---------
+  $thisCairo->set_line_width(2);
   $thisCairo->set_source_rgb(0.75, 0.75, 0.75);
-  my $inc;
+
+  # these two loops create the background grid
+  my $inc = 0;
   for ($inc = 0; $inc <= 2400; $inc++) {
     $thisCairo->move_to($inc * 12, 0);
-    $thisCairo->line_to($inc * 12, 1536);
+    $thisCairo->line_to($inc * 12, 1024);
   };
+
   for ($inc = 0; $inc <= 128; $inc++) {
-    $thisCairo->move_to(0, $inc * 12);
-    $thisCairo->line_to(28800, $inc * 12);
+    $thisCairo->move_to(0, $inc * 8);
+    $thisCairo->line_to(28800, $inc * 8);
   };
+
+  # the grid must be drawn before we start redrawing the note objects
+  $thisCairo->stroke();
+
+  # this checks for objects to draw and if there are any, it loops through them to check for note objects to draw, then draws the rectangles at the given coordinates.
+  # as said above, the gtkObjects array referencing is complicated. Keep that in mind if trying to decipher it.
+  if(@{$gtkObjects}) {
+    $thisCairo->set_source_rgb(0, 0, 0);
+    foreach(@{$gtkObjects}) {
+      if(@{$_}[0] eq 'rect') {
+        my ($x, $y) = (@{$_}[1], @{$_}[2]);
+
+        $thisCairo->rectangle($x - ($x % 12), $y - ($y % 8), 12, 8);
+        $thisCairo->fill();
+      };
+    };
+  };
+
   $thisCairo->stroke();
 }
 
-sub button_press {
+# handles mouse-clicks on the custom widget
+sub button {
   my $this = shift;
   my $event = shift;
 
+  # if the left mouse button then add the coordinates to the draw objects array
   if ($event->button == 1) {
-    my $x = $event->x;
-    my $y = $event->y;
-
-    my $thisCairo = Gtk2::Gdk::Cairo::Context->create($this->get_window());
-    $thisCairo->rectangle($x - ($x % 12), $y - ($y % 12), 12, 12);
-    $thisCairo->fill();
-    $thisCairo->stroke();
+    # THIS PUSH HAS SLOPPY MEMORY HANDLING. MAKE IT SO IT CHECKS FOR A SIMILAR OBJECT FIRST. --------FIXME--------
+    push(@{$gtkObjects}, ['rect', $event->x, $event->y]);
+    $this->expose;
   };
 }
 
@@ -91,7 +121,7 @@ sub evtOpen {
 	return \@events;
 };
 
-# This can be changed around to reflect whatever type of track and file we need
+# We currently don't actually write out MIDI data. We're working on the custom widget.
 # midiWrite(evtOpen("events.in"), 96, "Milestone2.mid");
 
 my $window = Gtk2::Window->new();
@@ -112,14 +142,6 @@ $controlHBox->pack_start($fileEntry, 0, 0, 0);
 my $saveButton = Gtk2::Button->new("_Save");
 $controlHBox->pack_start($saveButton, 0, 0, 0);
 $saveButton->signal_connect(clicked => sub{midiWrite(evtOpen("events.in"), 96, $fileEntry->get_text())});
-
-#my $mainWidgetScroll = Gtk2::ScrolledWindow->new();
-#my $mainWidgetTable = Gtk2::Table->new(128, 128, 1);
-#$mainWidgetScroll->add_with_viewport($mainWidgetTable);
-#$mainVBox->pack_start($mainWidgetScroll, 1, 1, 0);
-
-#my $tableButton = Gtk2::Button->new();
-#$mainWidgetTable->attach($tableButton, 0, 1, 0, 1, "expand", "expand", 0, 0);
 
 my $mainWidgetScroll = Gtk2::ScrolledWindow->new();
 my $mainWidget = Gtk2::MIDIPlot->new();
