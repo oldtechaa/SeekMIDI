@@ -10,17 +10,23 @@ use warnings;
 package Gtk2::MIDIPlot;
 
 use Gtk2;
-use base 'Gtk2::DrawingArea';
+use base 'Gtk2::ScrolledWindow';
 use Cairo;
 
-# makes a global draw object array ref; this array's referencing is complicated
-my $gtkObjects = [];
+# makes a global array that holds true/false values for which note blocks are enabled.
+my @gtkObjects;
+my $this;
 
 # sets up the class; asks for the signals we need; sets main widget size
 sub new {
   my $class = shift;
-  my $this = bless Gtk2::DrawingArea->new(), $class;
+  $this = Gtk2::DrawingArea->new();
+  my $thisScroll = bless Gtk2::ScrolledWindow->new(), $class;
+  $thisScroll->add_with_viewport($this);
 
+  $thisScroll->signal_connect(scroll_event => 'Gtk2::MIDIPlot::expose');
+  # $thisScroll->signal_connect(size_allocate => 'Gtk2::MIDIPlot::expose');
+  $this->signal_connect(scroll_event => 'Gtk2::MIDIPlot::expose');
   $this->signal_connect(expose_event => 'Gtk2::MIDIPlot::expose');
   $this->signal_connect(button_press_event => 'Gtk2::MIDIPlot::button');
 
@@ -29,12 +35,21 @@ sub new {
 
   $this->set_size_request(28800, 1024);
 
-  return $this;
+  # handles initializing the @gtkObjects array
+  my $incx;
+  my $incy;
+  for($incx = 0; $incx < 2400; $incx++) {
+    for($incy = 0; $incy < 128; $incy++) {
+      $gtkObjects[$incx][$incy] = 0;
+    };
+  };
+
+  return $thisScroll;
 }
 
 # refresh handler; handles drawing grid and objects
 sub expose {
-  my $this = shift;
+  $this->window->clear();
 
   # makes new Cairo context
   my $thisCairo = Gtk2::Gdk::Cairo::Context->create($this->get_window());
@@ -44,30 +59,40 @@ sub expose {
   $thisCairo->set_line_width(2);
   $thisCairo->set_source_rgb(0.75, 0.75, 0.75);
 
+  # get the current scroll positions and size of the window, then convert to grid-blocks, adjusting to draw surrounding blocks also, and make sure we don't go out of bounds
+  # figure out why 2 is needed added to the $*max values-------------FIXME---------------
+  my ($x, $y, $width, $height) = ($this->parent->get_hadjustment()->value, $this->parent->get_vadjustment()->value, $this->parent->get_hadjustment()->page_size, $this->parent->get_vadjustment()->page_size);
+  $x = int($x / 12);
+  $y = int($y / 8);
+  my $xmax = ($x + (int($width / 12) + 2));
+  my $ymax = ($y + (int($height / 8) + 2));
+  if($xmax > 2400) {$xmax = 2400};
+  if($ymax > 128) {$ymax = 128};
+
   # these two loops create the background grid
-  my $inc = 0;
-  for ($inc = 0; $inc <= 2400; $inc++) {
-    $thisCairo->move_to($inc * 12, 0);
-    $thisCairo->line_to($inc * 12, 1024);
+  my $inc;
+  for ($inc = $x; $inc <= $xmax; $inc++) {
+    $thisCairo->move_to(($inc * 12), $y * 8);
+    $thisCairo->line_to(($inc * 12), $ymax * 8);
   };
 
-  for ($inc = 0; $inc <= 128; $inc++) {
-    $thisCairo->move_to(0, $inc * 8);
-    $thisCairo->line_to(28800, $inc * 8);
+  for ($inc = $y; $inc <= $ymax; $inc++) {
+    $thisCairo->move_to($x * 12, $inc * 8);
+    $thisCairo->line_to($xmax * 12, $inc * 8);
   };
 
   # the grid must be drawn before we start redrawing the note objects
   $thisCairo->stroke();
 
-  # this checks for objects to draw and if there are any, it loops through them to check for note objects to draw, then draws the rectangles at the given coordinates.
-  # as said above, the gtkObjects array referencing is complicated. Keep that in mind if trying to decipher it.
-  if(@{$gtkObjects}) {
-    $thisCairo->set_source_rgb(0, 0, 0);
-    foreach(@{$gtkObjects}) {
-      if(@{$_}[0] eq 'rect') {
-        my ($x, $y) = (@{$_}[1], @{$_}[2]);
+  # this checks for events with their state set to true, then draws them 
+  my $incx;
+  my $incy;
 
-        $thisCairo->rectangle($x - ($x % 12), $y - ($y % 8), 12, 8);
+  $thisCairo->set_source_rgb(0, 0, 0);
+  for($incx = $x; $incx <= ($xmax - 1); $incx++) {
+    for($incy = $y; $incy <= ($ymax - 1); $incy++) {
+      if($gtkObjects[$incx][$incy] == 1) {
+        $thisCairo->rectangle($incx * 12, $incy * 8, 12, 8);
         $thisCairo->fill();
       };
     };
@@ -78,14 +103,13 @@ sub expose {
 
 # handles mouse-clicks on the custom widget
 sub button {
-  my $this = shift;
-  my $event = shift;
+  my $event = $_[1];
 
-  # if the left mouse button then add the coordinates to the draw objects array
+  # if the left mouse button then invert this gridbox's state value
   if ($event->button == 1) {
-    # THIS PUSH HAS SLOPPY MEMORY HANDLING. MAKE IT SO IT CHECKS FOR A SIMILAR OBJECT FIRST. --------FIXME--------
-    push(@{$gtkObjects}, ['rect', $event->x, $event->y]);
-    $this->expose;
+    my ($xind, $yind) = (($event->x - ($event->x % 12)) / 12, ($event->y - ($event->y % 8)) / 8);
+    $gtkObjects[$xind][$yind] = !$gtkObjects[$xind][$yind];
+    expose($this);
   };
 }
 
@@ -146,11 +170,9 @@ my $saveButton = Gtk2::Button->new("_Save");
 $controlHBox->pack_start($saveButton, 0, 0, 0);
 $saveButton->signal_connect(clicked => sub{midiWrite(evtOpen("events.in"), 96, $fileEntry->get_text())});
 
-# creates main widget and its scroll area
-my $mainWidgetScroll = Gtk2::ScrolledWindow->new();
+# creates main widget
 my $mainWidget = Gtk2::MIDIPlot->new();
-$mainWidgetScroll->add_with_viewport($mainWidget);
-$mainVBox->pack_start($mainWidgetScroll, 1, 1, 0);
+$mainVBox->pack_start($mainWidget, 1, 1, 0);
 
 # starts up the GUI
 $window->signal_connect(destroy => sub{Gtk2->main_quit()});
