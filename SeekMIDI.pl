@@ -52,15 +52,11 @@ sub expose {
   # makes new Cairo context
   my $thisCairo = Gtk2::Gdk::Cairo::Context->create($this->get_window());
 
-  # sets drawing parameters for main grid
-  # THIS LINE WIDTH SHOULD BE 1. THE LINE WIDTH GETS RESET SOMEWHERE THOUGH, SO THAT NEEDS TO BE FIXED. UNTIL THEN, 2 IT IS.--------FIXME---------
-  # $thisCairo->set_line_width(2);
+  # sets drawing color for main grid
   $thisCairo->set_source_rgb(0.75, 0.75, 0.75);
 
   # get the current scroll positions and size of the window, then convert to grid-blocks, adjusting to draw surrounding blocks also, and make sure we don't go out of bounds
-  my ($x, $y, $width, $height) = ($this->parent->get_hadjustment()->value, $this->parent->get_vadjustment()->value, $this->parent->get_hadjustment()->page_size, $this->parent->get_vadjustment()->page_size);
-  $x = int($x / 12);
-  $y = int($y / 8);
+  my ($x, $y, $width, $height) = (int($this->parent->get_hadjustment()->value / 12), int($this->parent->get_vadjustment()->value / 8), $this->parent->get_hadjustment()->page_size, $this->parent->get_vadjustment()->page_size);
   my $xmax = ($x + (int($width / 12) + 2));
   my $ymax = ($y + (int($height / 8) + 2));
   if($xmax > 2400) {$xmax = 2400};
@@ -179,5 +175,3 @@ $window->show_all();
 Gtk2->main();
 
 0;
-
-# (($frames & 255) << 8) | $tpf
