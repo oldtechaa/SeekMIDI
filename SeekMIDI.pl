@@ -24,9 +24,6 @@ sub new {
   my $thisScroll = bless Gtk2::ScrolledWindow->new(), $class;
   $thisScroll->add_with_viewport($this);
 
-  $thisScroll->signal_connect(scroll_event => 'Gtk2::MIDIPlot::expose');
-  # $thisScroll->signal_connect(size_allocate => 'Gtk2::MIDIPlot::expose');
-  $this->signal_connect(scroll_event => 'Gtk2::MIDIPlot::expose');
   $this->signal_connect(expose_event => 'Gtk2::MIDIPlot::expose');
   $this->signal_connect(button_press_event => 'Gtk2::MIDIPlot::button');
 
@@ -49,6 +46,7 @@ sub new {
 
 # refresh handler; handles drawing grid and objects
 sub expose {
+  # clears widget to refresh all graphics
   $this->window->clear();
 
   # makes new Cairo context
@@ -56,11 +54,10 @@ sub expose {
 
   # sets drawing parameters for main grid
   # THIS LINE WIDTH SHOULD BE 1. THE LINE WIDTH GETS RESET SOMEWHERE THOUGH, SO THAT NEEDS TO BE FIXED. UNTIL THEN, 2 IT IS.--------FIXME---------
-  $thisCairo->set_line_width(2);
+  # $thisCairo->set_line_width(2);
   $thisCairo->set_source_rgb(0.75, 0.75, 0.75);
 
   # get the current scroll positions and size of the window, then convert to grid-blocks, adjusting to draw surrounding blocks also, and make sure we don't go out of bounds
-  # figure out why 2 is needed added to the $*max values-------------FIXME---------------
   my ($x, $y, $width, $height) = ($this->parent->get_hadjustment()->value, $this->parent->get_vadjustment()->value, $this->parent->get_hadjustment()->page_size, $this->parent->get_vadjustment()->page_size);
   $x = int($x / 12);
   $y = int($y / 8);
@@ -72,8 +69,8 @@ sub expose {
   # these two loops create the background grid
   my $inc;
   for ($inc = $x; $inc <= $xmax; $inc++) {
-    $thisCairo->move_to(($inc * 12), $y * 8);
-    $thisCairo->line_to(($inc * 12), $ymax * 8);
+    $thisCairo->move_to($inc * 12, $y * 8);
+    $thisCairo->line_to($inc * 12, $ymax * 8);
   };
 
   for ($inc = $y; $inc <= $ymax; $inc++) {
@@ -88,9 +85,11 @@ sub expose {
   my $incx;
   my $incy;
 
+  $xmax--;
+  $ymax--;
   $thisCairo->set_source_rgb(0, 0, 0);
-  for($incx = $x; $incx <= ($xmax - 1); $incx++) {
-    for($incy = $y; $incy <= ($ymax - 1); $incy++) {
+  for($incx = $x; $incx <= $xmax; $incx++) {
+    for($incy = $y; $incy <= $ymax; $incy++) {
       if($gtkObjects[$incx][$incy] == 1) {
         $thisCairo->rectangle($incx * 12, $incy * 8, 12, 8);
         $thisCairo->fill();
