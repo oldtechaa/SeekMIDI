@@ -13,7 +13,7 @@ use Gtk2;
 use base 'Gtk2::ScrolledWindow';
 use Cairo;
 
-# makes a global array that holds true/false values for which note blocks are enabled.
+# makes a global array that holds true/false values for which note blocks are enabled, and the global drawing area
 my @gtkObjects;
 my $this;
 
@@ -26,9 +26,10 @@ sub new {
 
   $this->signal_connect(expose_event => 'Gtk2::MIDIPlot::expose');
   $this->signal_connect(button_press_event => 'Gtk2::MIDIPlot::button');
+  $this->signal_connect(motion_notify_event => 'Gtk2::MIDIPlot::motion');
 
-  # this is needed to receive the button-press event from the GtkWidget
-  $this->set_events("button-press-mask");
+  # ask for mouse events from the DrawingArea
+  $this->set_events(["button-press-mask", "button-motion-mask"]);
 
   $this->set_size_request(28800, 1024);
 
@@ -104,6 +105,19 @@ sub button {
   if ($event->button == 1) {
     my ($xind, $yind) = (($event->x - ($event->x % 12)) / 12, ($event->y - ($event->y % 8)) / 8);
     $gtkObjects[$xind][$yind] = !$gtkObjects[$xind][$yind];
+    expose($this);
+  };
+}
+
+# handles mouse drag across the widget
+# I'M SLOW!!!!!!-----------------------------------------FIXME------------------------------------------------
+sub motion {
+  my $event = $_[1];
+
+  # if the left mouse button then make sure we set the block under it to true
+  if(grep('button1-mask', $event->state)) {
+    my ($xind, $yind) = (($event->x - ($event->x % 12)) / 12, ($event->y - ($event->y % 8)) / 8);
+    $gtkObjects[$xind][$yind] = 1;
     expose($this);
   };
 }
