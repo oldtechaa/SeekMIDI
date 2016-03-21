@@ -1,6 +1,6 @@
 ### What is this repository for? ###
 
-This is the home of SeekMIDI, a simple, lightweight MIDI sequencer.
+This is the home of SeekMIDI, a simple graphical MIDI sequencer.
 
 ### How do I get set up? ###
 
@@ -11,6 +11,8 @@ Dependencies listed in the format Upstream/Debian/Arch (may be different on othe
  * Gtk2-Perl/libgtk2-perl/gtk2-perl.
 
  * Cairo-Perl/libcairo-perl/cairo-perl.
+
+ * Locate::gettext/liblocale-gettext-perl/perl-locale-gettext.
 
  * Perl/perl5/perl.
 
