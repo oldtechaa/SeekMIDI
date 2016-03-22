@@ -26,7 +26,7 @@ use Gtk2;
 use base 'Gtk2::ScrolledWindow';
 use Cairo;
 
-# makes a global array that holds true/false values for which note blocks are enabled, and the global drawing area
+# makes a class-global array that holds true/false values for which note blocks are enabled, and the global drawing area
 my @gtkObjects;
 my $this;
 
@@ -128,11 +128,13 @@ sub motion {
   my $event = $_[1];
 
   # if the left mouse button then make sure we set the block under it to true
-  if(grep('button1-mask', $event->state)) {
-    my ($xind, $yind) = (($event->x - ($event->x % 12)) / 12, ($event->y - ($event->y % 8)) / 8);
-    $gtkObjects[$xind][$yind] = 1;
-    expose($this);
-  };
+  my ($xind, $yind) = (($event->x - ($event->x % 12)) / 12, ($event->y - ($event->y % 8)) / 8);
+  if($gtkObjects[$xind][$yind] == 0) {
+    if(grep('button1-mask', $event->state)) {
+      $gtkObjects[$xind][$yind] = 1;
+      expose($this);
+    }
+  }
 }
 
 package main;
@@ -159,11 +161,12 @@ sub evtOpen {
 	my @events;
 
 	open(my $evtHandle, "<", $evtFile);
-	my @evtLines = <$evtHandle>;
 
-	foreach (@evtLines) {
+	while (<$evtHandle>) {
 		push(@events, [split(/,\s*/, $_)]);
 	};
+
+        close($evtHandle);
 
 	return \@events;
 };
