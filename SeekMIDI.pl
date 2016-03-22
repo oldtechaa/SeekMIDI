@@ -29,6 +29,7 @@ use Cairo;
 # makes a class-global array that holds true/false values for which note blocks are enabled, and the global drawing area
 my @gtkObjects;
 my $this;
+my $dragRow;
 
 # sets up the class; asks for the signals we need; sets main widget size
 sub new {
@@ -39,10 +40,11 @@ sub new {
 
   $this->signal_connect(expose_event => 'Gtk2::MIDIPlot::expose');
   $this->signal_connect(button_press_event => 'Gtk2::MIDIPlot::button');
+  $this->signal_connect(button_release_event => 'Gtk2::MIDIPlot::release');
   $this->signal_connect(motion_notify_event => 'Gtk2::MIDIPlot::motion');
 
   # ask for mouse events from the DrawingArea
-  $this->set_events(["button-press-mask", "button-motion-mask"]);
+  $this->set_events(["button-press-mask", "button-motion-mask", "button-release-mask"]);
 
   $this->set_size_request(28800, 1024);
 
@@ -55,10 +57,14 @@ sub new {
     };
   };
 
+  # initializes the drag row
+  $dragRow = -1;
+
   return $thisScroll;
 }
 
 # refresh handler; handles drawing grid and objects
+# I'M SLOW!!!!!!!!!!-----------------------------------------FIXME------------------------------------------------
 sub expose {
   # clears widget to refresh all graphics
   $this->window->clear();
@@ -123,18 +129,30 @@ sub button {
 }
 
 # handles mouse drag across the widget
-# I'M SLOW!!!!!!-----------------------------------------FIXME------------------------------------------------
 sub motion {
   my $event = $_[1];
 
   # if the left mouse button then make sure we set the block under it to true
   my ($xind, $yind) = (($event->x - ($event->x % 12)) / 12, ($event->y - ($event->y % 8)) / 8);
-  if($gtkObjects[$xind][$yind] == 0) {
+  if($dragRow == -1) {
+    $dragRow = $yind;
+  }
+  if($gtkObjects[$xind][$dragRow] == 0) {
     if(grep('button1-mask', $event->state)) {
-      $gtkObjects[$xind][$yind] = 1;
-      expose($this);
+      $gtkObjects[$xind][$dragRow] = 1;
+
+      # makes new Cairo context
+      my $thisCairo = Gtk2::Gdk::Cairo::Context->create($this->get_window());
+
+      $thisCairo->rectangle($xind * 12, $dragRow * 8, 12, 8);
+      $thisCairo->fill();
     }
   }
+}
+
+# clears the current drag row when the drag is ended
+sub release {
+  $dragRow = -1;
 }
 
 package main;
