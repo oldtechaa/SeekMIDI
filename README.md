@@ -12,7 +12,7 @@ Dependencies listed in the format Upstream/Debian/Arch (may be different on othe
 
  * Cairo-Perl/libcairo-perl/cairo-perl.
 
- * Locate::gettext/liblocale-gettext-perl/perl-locale-gettext.
+ * Locale::gettext/liblocale-gettext-perl/perl-locale-gettext.
 
  * Perl/perl5/perl.
 
