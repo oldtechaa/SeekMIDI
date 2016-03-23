@@ -2,6 +2,7 @@ The milestones are outlined in goals.txt. This file discusses the issues
 currently facing us.
 
  * Users might want a faster way to remove notes. Possibly, we could remove all consecutive note points in the grid when they click in one. That might be unexpected behavior though.
- * Performance is pretty bad on the custom widget. This could be fixed by managing the size of the drawing area manually, by eliminating calls to expose(), or by invalidating only certain areas.
+ * Performance is pretty bad on the custom widget. This could be fixed by managing the size of the drawing area manually or by eliminating calls to expose() and drawing only necessary graphics in each function.
  * We need identifiers on the edges of the widget, as well as other controls for volume, etc.
  * Obviously, we need to get MIDI data out of the widget.
+ * Selection of notes.

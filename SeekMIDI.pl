@@ -29,7 +29,7 @@ use Cairo;
 # makes a class-global array that holds true/false values for which note blocks are enabled, and the global drawing area
 my @gtkObjects;
 my $this;
-my $dragRow;
+my ($dragRow, $dragStart) = (-1, -1);
 
 # sets up the class; asks for the signals we need; sets main widget size
 sub new {
@@ -54,11 +54,8 @@ sub new {
   for($incx = 0; $incx < 2400; $incx++) {
     for($incy = 0; $incy < 128; $incy++) {
       $gtkObjects[$incx][$incy] = 0;
-    };
-  };
-
-  # initializes the drag row
-  $dragRow = -1;
+    }
+  }
 
   return $thisScroll;
 }
@@ -66,7 +63,6 @@ sub new {
 # refresh handler; handles drawing grid and objects
 # I'M SLOW!!!!!!!!!!-----------------------------------------FIXME------------------------------------------------
 sub expose {
-  # clears widget to refresh all graphics
   $this->window->clear();
 
   # makes new Cairo context
@@ -87,36 +83,33 @@ sub expose {
   for ($inc = $x; $inc <= $xmax; $inc++) {
     $thisCairo->move_to($inc * 12, $y * 8);
     $thisCairo->line_to($inc * 12, $ymax * 8);
-  };
-
+  }
   for ($inc = $y; $inc <= $ymax; $inc++) {
     $thisCairo->move_to($x * 12, $inc * 8);
     $thisCairo->line_to($xmax * 12, $inc * 8);
-  };
+  }
 
   # the grid must be drawn before we start redrawing the note objects
   $thisCairo->stroke();
 
   # this checks for events with their state set to true, then draws them 
-  my $incx;
-  my $incy;
-
   $xmax--;
   $ymax--;
   $thisCairo->set_source_rgb(0, 0, 0);
-  for($incx = $x; $incx <= $xmax; $incx++) {
-    for($incy = $y; $incy <= $ymax; $incy++) {
+  for(my $incx = $x; $incx <= $xmax; $incx++) {
+    for(my $incy = $y; $incy <= $ymax; $incy++) {
       if($gtkObjects[$incx][$incy] == 1) {
         $thisCairo->rectangle($incx * 12, $incy * 8, 12, 8);
-        $thisCairo->fill();
-      };
-    };
-  };
+      }
+    }
+  }
 
-  $thisCairo->stroke();
+  # fill applies the black source onto the destination through the mask with rectangular holes
+  $thisCairo->fill();
 }
 
 # handles mouse-clicks on the custom widget
+# I'M SLOWER THAN I COULD BE! I DON'T HAVE TO CALL expose(), BUT I DO! I COULD HANDLE THE DRAWING MYSELF. --------------------------------FIXME--------------------------------
 sub button {
   my $event = $_[1];
 
@@ -124,35 +117,61 @@ sub button {
   if ($event->button == 1) {
     my ($xind, $yind) = (($event->x - ($event->x % 12)) / 12, ($event->y - ($event->y % 8)) / 8);
     $gtkObjects[$xind][$yind] = !$gtkObjects[$xind][$yind];
-    expose($this);
-  };
+    if($gtkObjects[$xind][$yind] == 0) {
+      expose($this);
+    } else {
+      # makes new Cairo context
+      my $thisCairo = Gtk2::Gdk::Cairo::Context->create($this->get_window());
+
+      $thisCairo->rectangle($xind * 12, $yind * 8, 12, 8);
+      $thisCairo->fill();
+    }
+
+    # initialize drag start variable
+    if($dragStart == -1) {
+      $dragStart = $xind;
+    }
+  }
 }
 
 # handles mouse drag across the widget
+# I DON'T DRAW ALL THE WAY TO THE END OF THE CURRENT DRAG! ------------------------------------------------FIXME----------------------------------------------------
 sub motion {
   my $event = $_[1];
 
   # if the left mouse button then make sure we set the block under it to true
   my ($xind, $yind) = (($event->x - ($event->x % 12)) / 12, ($event->y - ($event->y % 8)) / 8);
+
+  # initialize drag variable if not already done
   if($dragRow == -1) {
     $dragRow = $yind;
   }
+
   if($gtkObjects[$xind][$dragRow] == 0) {
     if(grep('button1-mask', $event->state)) {
-      $gtkObjects[$xind][$dragRow] = 1;
-
       # makes new Cairo context
       my $thisCairo = Gtk2::Gdk::Cairo::Context->create($this->get_window());
 
-      $thisCairo->rectangle($xind * 12, $dragRow * 8, 12, 8);
+      # checks whether our overall drag is to the left or right and draws rectangles and updates $gtkObjects accordingly
+      if($xind >= $dragRow) {
+        $thisCairo->rectangle($dragStart * 12, $dragRow * 8, ($xind - $dragStart) * 12, 8);
+        for(my $inc = $dragStart; $inc <= $xind; $inc++) {
+          $gtkObjects[$inc][$dragRow] = 1;
+        }
+      } else {
+        $thisCairo->rectangle($xind * 12, $dragRow * 8, ($dragStart - $xind) * 12, 8);
+        for(my $inc = $xind; $inc <= $dragStart; $inc++) {
+          $gtkObjects[$inc][$dragRow] = 1;
+        }
+      }
       $thisCairo->fill();
     }
   }
 }
 
-# clears the current drag row when the drag is ended
+# clears the current drag row and start point when the drag is ended
 sub release {
-  $dragRow = -1;
+  ($dragRow, $dragStart) = (-1, -1);
 }
 
 package main;
@@ -170,7 +189,7 @@ sub midiWrite {
 	my $midiTrack = MIDI::Track->new({'events' => $midiEventsRef});
 	my $midiPiece = MIDI::Opus->new({'format' => 0, 'ticks' => $midiTicks, 'tracks' => [$midiTrack]});
 	$midiPiece->write_to_file($midiFile);
-};
+}
 
 # reads from the event file (future capability, not sure if it will be added) This is just for testing, to reach early milestones without an event entry control.
 # would mainly be useful if there was ever a CLI version or if the GUI version had the capability to read non-MIDI projects.
@@ -187,7 +206,7 @@ sub evtOpen {
         close($evtHandle);
 
 	return \@events;
-};
+}
 
 # creates window with title
 my $window = Gtk2::Window->new();
