@@ -29,3 +29,7 @@ Email me to contribute. I will explain what the goals are, and what our mileston
 ### Who do I talk to? ###
 
 It's just me. [oldtechaa@gmail.com](mailto:oldtechaa@gmail.com)
+
+### The main website ###
+
+The main website's address currently is [the Github repo](https://github.com/oldtechaa/SeekMIDI/).
