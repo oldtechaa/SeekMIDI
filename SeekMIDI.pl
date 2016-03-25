@@ -61,7 +61,6 @@ sub new {
 }
 
 # refresh handler; handles drawing grid and objects
-# I'M SLOW!!!!!!!!!!-----------------------------------------FIXME------------------------------------------------
 sub expose {
   $this->window->clear();
 
@@ -109,7 +108,6 @@ sub expose {
 }
 
 # handles mouse-clicks on the custom widget
-# I'M SLOWER THAN I COULD BE! I DON'T HAVE TO CALL expose(), BUT I DO! I COULD HANDLE THE DRAWING MYSELF. --------------------------------FIXME--------------------------------
 sub button {
   my $event = $_[1];
 
@@ -127,34 +125,31 @@ sub button {
       $thisCairo->fill();
     }
 
-    # initialize drag start variable
+    # initialize drag variables
     if($dragStart == -1) {
       $dragStart = $xind;
+    }
+    if($dragRow == -1) {
+      $dragRow = $yind;
     }
   }
 }
 
 # handles mouse drag across the widget
-# I DON'T DRAW ALL THE WAY TO THE END OF THE CURRENT DRAG! ------------------------------------------------FIXME----------------------------------------------------
 sub motion {
   my $event = $_[1];
 
-  # if the left mouse button then make sure we set the block under it to true
   my ($xind, $yind) = (($event->x - ($event->x % 12)) / 12, ($event->y - ($event->y % 8)) / 8);
 
-  # initialize drag variable if not already done
-  if($dragRow == -1) {
-    $dragRow = $yind;
-  }
-
+  # check if the underlying cell is set or not and if not, check which mouse button is pressed, then draw and set $gtkObjects
   if($gtkObjects[$xind][$dragRow] == 0) {
     if(grep('button1-mask', $event->state)) {
       # makes new Cairo context
       my $thisCairo = Gtk2::Gdk::Cairo::Context->create($this->get_window());
 
       # checks whether our overall drag is to the left or right and draws rectangles and updates $gtkObjects accordingly
-      if($xind >= $dragRow) {
-        $thisCairo->rectangle($dragStart * 12, $dragRow * 8, ($xind - $dragStart) * 12, 8);
+      if($xind >= $dragStart) {
+        $thisCairo->rectangle($dragStart * 12, $dragRow * 8, ($xind - $dragStart + 1) * 12, 8);
         for(my $inc = $dragStart; $inc <= $xind; $inc++) {
           $gtkObjects[$inc][$dragRow] = 1;
         }
