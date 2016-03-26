@@ -21,3 +21,7 @@ It's just me. [oldtechaa@gmail.com](mailto:oldtechaa@gmail.com)
 ### The main website ###
 
 The main website's address currently is [the Github repo](https://github.com/oldtechaa/SeekMIDI/).
+
+### Where's the documentation? ###
+
+The documentation can be found [here at our wiki](https://github.com/oldtechaa/SeekMIDI/wiki).
