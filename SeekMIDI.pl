@@ -202,7 +202,7 @@ package main;
 
 use MIDI;
 use Gtk2 -init;
-use Locale::gettext;
+# use Locale::gettext;
 
 # writes the MIDI output to a file based on the list of events and the filename
 sub midiWrite {
