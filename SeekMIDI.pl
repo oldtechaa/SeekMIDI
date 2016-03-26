@@ -2,6 +2,7 @@
 
 # SeekMIDI, a simple graphical MIDI sequencer
 # Copyright (C) 2016  oldtechaa  <oldtechaa@gmail.com>
+# Version 0.1.0
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -169,6 +170,34 @@ sub release {
   ($dragRow, $dragStart) = (-1, -1);
 }
 
+sub getMIDI {
+  my @events;
+
+  push(@events, ['patch_change', 0, 0, 0]);
+
+  my $delta = 0;
+  for(my $incy = 0; $incy <= 127; $incy++) {
+    if($gtkObjects[0][$incy] == 1) {
+      push(@events, ['note_on', $delta, 0, $incy, 64]);
+    }
+  }
+  $delta = 24;
+  for(my $incx = 1; $incx <= 2400; $incx++) {
+    for(my $incy = 0; $incy <= 127; $incy++) {
+      if($gtkObjects[$incx][$incy] == 0 && $gtkObjects[$incx - 1][$incy] == 1) {
+        push(@events, ['note_off', $delta, 0, $incy, 64]);
+        $delta = 0;
+      } elsif($gtkObjects[$incx][$incy] == 1 && $gtkObjects[$incx - 1][$incy] == 0) {
+        push(@events, ['note_on', $delta, 0, $incy, 64]);
+        $delta = 0;
+      }
+    }
+    $delta = $delta + 24;
+  }
+
+  return \@events;
+}
+
 package main;
 
 use MIDI;
@@ -226,11 +255,11 @@ $controlHBox->pack_start($fileEntry, 0, 0, 0);
 # creates file save button
 my $saveButton = Gtk2::Button->new("_Save");
 $controlHBox->pack_start($saveButton, 0, 0, 0);
-$saveButton->signal_connect(clicked => sub{midiWrite(evtOpen("events.in"), 96, $fileEntry->get_text())});
 
 # creates main widget
 my $mainWidget = Gtk2::MIDIPlot->new();
 $mainVBox->pack_start($mainWidget, 1, 1, 0);
+$saveButton->signal_connect(clicked => sub{midiWrite($mainWidget->getMIDI(), 96, $fileEntry->get_text())});
 
 # starts up the GUI
 $window->signal_connect(destroy => sub{Gtk2->main_quit()});
