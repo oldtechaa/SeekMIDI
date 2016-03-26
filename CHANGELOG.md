@@ -4,6 +4,7 @@ Notable changes will be documented here. This project strives for [Semantic Vers
 ## [Unreleased] - 2016-03-26
 ### Added
 - Bug fix for issue #11, which spews out a bunch of unnecessary warnings.
+- README now links to the wiki.
 
 ## 0.01 - 2016-03-25
 ### Added
