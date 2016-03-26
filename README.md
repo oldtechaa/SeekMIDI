@@ -4,19 +4,7 @@ This is the home of SeekMIDI, a simple graphical MIDI sequencer offering multi-c
 
 ### How do I get set up? ###
 
-Dependencies listed in the format Upstream/Debian/Arch (may be different on other distributions):
-
- * MIDI-Perl/libmidi-perl/perl-midi-perl. For convenience on other distributions which do not package the library, the MIDI modules are provided in tarball form. Extract the tarball, then follow the README to install.
-
- * Gtk2-Perl/libgtk2-perl/gtk2-perl.
-
- * Cairo-Perl/libcairo-perl/cairo-perl.
-
- * Locale::gettext/liblocale-gettext-perl/perl-locale-gettext.
-
- * Perl/perl5/perl.
-
-Once set up, run "perl SeekMIDI.pl" in the folder containing SeekMIDI to run the program.
+See [the wiki](https://github.com/oldtechaa/SeekMIDI/wiki/HowTo:-Install-and-Run).
 
 Please note: An empty filename value may crash the program.
 
