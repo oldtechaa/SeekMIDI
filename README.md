@@ -1,6 +1,6 @@
 ### What is this repository for? ###
 
-This is the home of SeekMIDI, a simple graphical MIDI sequencer offering multi-channel MIDI sequencing. Look at [LMMS](https://lmms.io/) for a slightly heavier example of what we mean. Written in Perl, SeekMIDI uses GTK+2 and Cairo to provide its GUI and MIDI-Perl to provide its MIDI handling system. We have not made our first official release yet, but we plan to soon. Please check back for our first release. Until then, please try testing it out following the instructions below.
+This is the home of SeekMIDI, a simple graphical MIDI sequencer offering multi-channel MIDI sequencing. Look at [Seq24](https://launchpad.net/seq24/) for a slightly heavier example of what we mean. Written in Perl, SeekMIDI uses GTK+2 and Cairo to provide its GUI and MIDI-Perl to provide its MIDI handling system. We have released one version: 0.1.0. Please download it and try it out.
 
 ### How do I get set up? ###
 
