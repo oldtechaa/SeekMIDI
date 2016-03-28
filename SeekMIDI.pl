@@ -178,17 +178,17 @@ sub getMIDI {
   my $delta = 0;
   for(my $incy = 0; $incy <= 127; $incy++) {
     if($gtkObjects[0][$incy] == 1) {
-      push(@events, ['note_on', $delta, 0, $incy, 96]);
+      push(@events, ['note_on', $delta, 0, 127 - $incy, 96]);
     }
   }
   $delta = 24;
   for(my $incx = 1; $incx < 2400; $incx++) {
     for(my $incy = 0; $incy < 127; $incy++) {
       if($gtkObjects[$incx][$incy] == 0 && $gtkObjects[$incx - 1][$incy] == 1) {
-        push(@events, ['note_off', $delta, 0, $incy, 127]);
+        push(@events, ['note_off', $delta, 0, 127 - $incy, 127]);
         $delta = 0;
       } elsif($gtkObjects[$incx][$incy] == 1 && $gtkObjects[$incx - 1][$incy] == 0) {
-        push(@events, ['note_on', $delta, 0, $incy, 127]);
+        push(@events, ['note_on', $delta, 0, 127 - $incy, 127]);
         $delta = 0;
       }
     }
