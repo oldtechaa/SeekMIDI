@@ -6,6 +6,8 @@ Notable changes will be documented here. This project strives for [Semantic Vers
 - Bug fix for issue #11, which spews out a bunch of unnecessary warnings.
 - README now links to the wiki.
 - Fix for issue #15: higher notes are now at the top of the plotting area.
+- Functionality to remove notes more quickly. You can now drag across a row with grid cells set to turn them off.
+- No longer rely on installation of MIDI-Perl. It is now included in the source directory under lib/.
 
 ## 0.01 - 2016-03-25
 ### Added

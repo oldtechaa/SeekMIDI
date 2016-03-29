@@ -30,7 +30,7 @@ use Cairo;
 # makes a class-global array that holds true/false values for which note blocks are enabled, and the global drawing area
 my @gtkObjects;
 my $this;
-my ($dragRow, $dragStart) = (-1, -1);
+my ($dragRow, $dragStart, $dragMode) = (-1, -1, -1);
 
 # sets up the class; asks for the signals we need; sets main widget size
 sub new {
@@ -115,15 +115,19 @@ sub button {
   # if the left mouse button then invert this gridbox's state value
   if ($event->button == 1) {
     my ($xind, $yind) = (($event->x - ($event->x % 12)) / 12, ($event->y - ($event->y % 8)) / 8);
-    $gtkObjects[$xind][$yind] = !$gtkObjects[$xind][$yind];
     if($gtkObjects[$xind][$yind] == 0) {
-      expose($this);
-    } else {
+      $gtkObjects[$xind][$yind] = 1;
+
       # makes new Cairo context
       my $thisCairo = Gtk2::Gdk::Cairo::Context->create($this->get_window());
 
       $thisCairo->rectangle($xind * 12, $yind * 8, 12, 8);
       $thisCairo->fill();
+      $dragMode = 1;
+    } else {
+      $gtkObjects[$xind][$yind] = 0;
+      $dragMode = 0;
+      expose($this);
     }
 
     # initialize drag variables
@@ -143,11 +147,11 @@ sub motion {
   my ($xind, $yind) = (($event->x - ($event->x % 12)) / 12, ($event->y - ($event->y % 8)) / 8);
 
   # check if the underlying cell is set or not and if not, check which mouse button is pressed, then draw and set $gtkObjects
-  if($gtkObjects[$xind][$dragRow] == 0) {
-    if(grep('button1-mask', $event->state)) {
-      # makes new Cairo context
-      my $thisCairo = Gtk2::Gdk::Cairo::Context->create($this->get_window());
+  if(grep('button1-mask', $event->state)) {
+    # makes new Cairo context
+    my $thisCairo = Gtk2::Gdk::Cairo::Context->create($this->get_window());
 
+    if($dragMode == 1) {
       # checks whether our overall drag is to the left or right and draws rectangles and updates $gtkObjects accordingly
       if($xind >= $dragStart) {
         $thisCairo->rectangle($dragStart * 12, $dragRow * 8, ($xind - $dragStart + 1) * 12, 8);
@@ -160,14 +164,27 @@ sub motion {
           $gtkObjects[$inc][$dragRow] = 1;
         }
       }
-      $thisCairo->fill();
+    } else {
+      # checks whether our overall drag is to the left or right and updates $gtkObjects accordingly
+      if($xind >= $dragStart) {
+        for(my $inc = $dragStart; $inc <= $xind; $inc++) {
+          $gtkObjects[$inc][$dragRow] = 0;
+        }
+        expose($this);
+      } else {
+        for(my $inc = $xind; $inc <= $dragStart; $inc++) {
+          $gtkObjects[$inc][$dragRow] = 0;
+        }
+        expose($this);
+      }
     }
+    $thisCairo->fill();
   }
 }
 
-# clears the current drag row and start point when the drag is ended
+# clears the current drag row, start point, and drag mode when the drag is ended
 sub release {
-  ($dragRow, $dragStart) = (-1, -1);
+  ($dragRow, $dragStart, $dragMode) = (-1, -1, -1);
 }
 
 sub getMIDI {
@@ -200,6 +217,7 @@ sub getMIDI {
 
 package main;
 
+use lib './lib/';
 use MIDI;
 use Gtk2 -init;
 # use Locale::gettext;
