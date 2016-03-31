@@ -38,16 +38,20 @@ sub new {
   $this = Gtk2::DrawingArea->new();
   my $thisScroll = bless Gtk2::ScrolledWindow->new(), $class;
   $thisScroll->add_with_viewport($this);
+  $thisScroll->get_hadjustment->upper($thisScroll->get_hadjustment->upper + 36);
+  $thisScroll->get_vadjustment->upper($thisScroll->get_vadjustment->upper + 16);
 
   $this->signal_connect(expose_event => 'Gtk2::MIDIPlot::expose');
   $this->signal_connect(button_press_event => 'Gtk2::MIDIPlot::button');
   $this->signal_connect(button_release_event => 'Gtk2::MIDIPlot::release');
   $this->signal_connect(motion_notify_event => 'Gtk2::MIDIPlot::motion');
+  $thisScroll->get_hadjustment->signal_connect(value_changed => 'Gtk2::MIDIPlot::expose');
+  $thisScroll->get_vadjustment->signal_connect(value_changed => 'Gtk2::MIDIPlot::expose');
 
   # ask for mouse events from the DrawingArea
   $this->set_events(["button-press-mask", "button-motion-mask", "button-release-mask"]);
 
-  $this->set_size_request(28800, 1024);
+  $this->set_size_request(28836, 1040);
 
   # handles initializing the @gtkObjects array
   my $incx;
@@ -81,12 +85,12 @@ sub expose {
   # these two loops create the background grid
   my $inc;
   for ($inc = $x; $inc <= $xmax; $inc++) {
-    $thisCairo->move_to($inc * 12, $y * 8);
-    $thisCairo->line_to($inc * 12, $ymax * 8);
+    $thisCairo->move_to($inc * 12 + 36, $y * 8 + 16);
+    $thisCairo->line_to($inc * 12 + 36, $ymax * 8 + 16);
   }
   for ($inc = $y; $inc <= $ymax; $inc++) {
-    $thisCairo->move_to($x * 12, $inc * 8);
-    $thisCairo->line_to($xmax * 12, $inc * 8);
+    $thisCairo->move_to($x * 12 + 36, $inc * 8 + 16);
+    $thisCairo->line_to($xmax * 12 + 36, $inc * 8 + 16);
   }
 
   # the grid must be drawn before we start redrawing the note objects
