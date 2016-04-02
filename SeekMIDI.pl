@@ -31,6 +31,17 @@ use Cairo;
 my @gtkObjects;
 my $this;
 my ($dragRow, $dragStart, $dragMode) = (-1, -1, -1);
+my @notes = (0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
+             0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
+             0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
+             0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
+             0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
+             0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
+             0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
+             0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
+             0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
+             0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
+             0, 1, 0, 1, 0, 0, 1, 0);
 
 # sets up the class; asks for the signals we need; sets main widget size
 sub new {
@@ -38,8 +49,6 @@ sub new {
   $this = Gtk2::DrawingArea->new();
   my $thisScroll = bless Gtk2::ScrolledWindow->new(), $class;
   $thisScroll->add_with_viewport($this);
-  $thisScroll->get_hadjustment->upper($thisScroll->get_hadjustment->upper + 36);
-  $thisScroll->get_vadjustment->upper($thisScroll->get_vadjustment->upper + 16);
 
   $this->signal_connect(expose_event => 'Gtk2::MIDIPlot::expose');
   $this->signal_connect(button_press_event => 'Gtk2::MIDIPlot::button');
@@ -76,33 +85,37 @@ sub expose {
   $thisCairo->set_source_rgb(0.75, 0.75, 0.75);
 
   # get the current scroll positions and size of the window, then convert to grid-blocks, adjusting to draw surrounding blocks also, and make sure we don't go out of bounds
-  my ($x, $y, $width, $height) = (int($this->parent->get_hadjustment()->value / 12), int($this->parent->get_vadjustment()->value / 8), $this->parent->get_hadjustment()->page_size, $this->parent->get_vadjustment()->page_size);
-  my $xmax = ($x + (int($width / 12) + 2));
-  my $ymax = ($y + (int($height / 8) + 2));
-  if($xmax > 2400) {$xmax = 2400};
-  if($ymax > 128) {$ymax = 128};
+  my ($xmin, $ymin, $width, $height) = (int($this->parent->get_hadjustment()->value / 12) + 3, int($this->parent->get_vadjustment()->value / 8) + 2, $this->parent->get_hadjustment()->page_size - 36, $this->parent->get_vadjustment()->page_size - 16);
+  my $xmax = ($xmin + (int($width / 12) + 2));
+  my $ymax = ($ymin + (int($height / 8) + 2));
+  if($xmax > 2403) {$xmax = 2403};
+  if($ymax > 130) {$ymax = 130};
 
   # these two loops create the background grid
   my $inc;
-  for ($inc = $x; $inc <= $xmax; $inc++) {
-    $thisCairo->move_to($inc * 12 + 36, $y * 8 + 16);
-    $thisCairo->line_to($inc * 12 + 36, $ymax * 8 + 16);
+  for ($inc = $xmin; $inc <= $xmax; $inc++) {
+    $thisCairo->move_to($inc * 12, $ymin * 8);
+    $thisCairo->line_to($inc * 12, $ymax * 8);
   }
-  for ($inc = $y; $inc <= $ymax; $inc++) {
-    $thisCairo->move_to($x * 12 + 36, $inc * 8 + 16);
-    $thisCairo->line_to($xmax * 12 + 36, $inc * 8 + 16);
+  for ($inc = $ymin; $inc <= $ymax; $inc++) {
+    $thisCairo->move_to($xmin * 12, $inc * 8);
+    $thisCairo->line_to($xmax * 12, $inc * 8);
   }
 
   # the grid must be drawn before we start redrawing the note objects
   $thisCairo->stroke();
 
-  # this checks for events with their state set to true, then draws them 
-  $xmax--;
-  $ymax--;
   $thisCairo->set_source_rgb(0, 0, 0);
-  for(my $incx = $x; $incx <= $xmax; $incx++) {
-    for(my $incy = $y; $incy <= $ymax; $incy++) {
-      if($gtkObjects[$incx][$incy] == 1) {
+  for($inc = $ymin; $inc < $ymax; $inc++) {
+    if($notes[127 - ($inc - 2)] == 1) {
+      $thisCairo->rectangle(($xmin - 3) * 12, $inc * 8, 36, 8);
+    }
+  }
+
+  # this checks for events with their state set to true, then draws them 
+  for(my $incx = $xmin; $incx < $xmax; $incx++) {
+    for(my $incy = $ymin; $incy < $ymax; $incy++) {
+      if($gtkObjects[$incx - 3][$incy - 2] == 1) {
         $thisCairo->rectangle($incx * 12, $incy * 8, 12, 8);
       }
     }
@@ -118,28 +131,28 @@ sub button {
 
   # if the left mouse button then invert this gridbox's state value
   if ($event->button == 1) {
-    my ($xind, $yind) = (($event->x - ($event->x % 12)) / 12, ($event->y - ($event->y % 8)) / 8);
-    if($gtkObjects[$xind][$yind] == 0) {
-      $gtkObjects[$xind][$yind] = 1;
+    my ($xcell, $ycell) = (($event->x - ($event->x % 12)) / 12, ($event->y - ($event->y % 8)) / 8);
+    if($gtkObjects[$xcell - 3][$ycell - 2] == 0) {
+      $gtkObjects[$xcell - 3][$ycell - 2] = 1;
 
       # makes new Cairo context
       my $thisCairo = Gtk2::Gdk::Cairo::Context->create($this->get_window());
 
-      $thisCairo->rectangle($xind * 12, $yind * 8, 12, 8);
+      $thisCairo->rectangle($xcell * 12, $ycell * 8, 12, 8);
       $thisCairo->fill();
       $dragMode = 1;
     } else {
-      $gtkObjects[$xind][$yind] = 0;
+      $gtkObjects[$xcell - 3][$ycell - 2] = 0;
       $dragMode = 0;
-      expose($this);
+      expose();
     }
 
     # initialize drag variables
     if($dragStart == -1) {
-      $dragStart = $xind;
+      $dragStart = $xcell;
     }
     if($dragRow == -1) {
-      $dragRow = $yind;
+      $dragRow = $ycell;
     }
   }
 }
@@ -148,36 +161,36 @@ sub button {
 sub motion {
   my $event = $_[1];
 
-  my ($xind, $yind) = (($event->x - ($event->x % 12)) / 12, ($event->y - ($event->y % 8)) / 8);
-
   # check if the underlying cell is set or not and if not, check which mouse button is pressed, then draw and set $gtkObjects
   if(grep('button1-mask', $event->state)) {
+    my $xcell = ($event->x - ($event->x % 12)) / 12;
+
     # makes new Cairo context
     my $thisCairo = Gtk2::Gdk::Cairo::Context->create($this->get_window());
 
     if($dragMode == 1) {
       # checks whether our overall drag is to the left or right and draws rectangles and updates $gtkObjects accordingly
-      if($xind >= $dragStart) {
-        $thisCairo->rectangle($dragStart * 12, $dragRow * 8, ($xind - $dragStart + 1) * 12, 8);
-        for(my $inc = $dragStart; $inc <= $xind; $inc++) {
-          $gtkObjects[$inc][$dragRow] = 1;
+      if($xcell >= $dragStart) {
+        $thisCairo->rectangle($dragStart * 12, $dragRow * 8, ($xcell - $dragStart + 1) * 12, 8);
+        for(my $inc = $dragStart; $inc <= $xcell; $inc++) {
+          $gtkObjects[$inc - 3][$dragRow - 2] = 1;
         }
       } else {
-        $thisCairo->rectangle($xind * 12, $dragRow * 8, ($dragStart - $xind) * 12, 8);
-        for(my $inc = $xind; $inc <= $dragStart; $inc++) {
-          $gtkObjects[$inc][$dragRow] = 1;
+        $thisCairo->rectangle($xcell * 12, $dragRow * 8, ($dragStart - $xcell) * 12, 8);
+        for(my $inc = $xcell; $inc <= $dragStart; $inc++) {
+          $gtkObjects[$inc - 3][$dragRow - 2] = 1;
         }
       }
     } else {
       # checks whether our overall drag is to the left or right and updates $gtkObjects accordingly
-      if($xind >= $dragStart) {
-        for(my $inc = $dragStart; $inc <= $xind; $inc++) {
-          $gtkObjects[$inc][$dragRow] = 0;
+      if($xcell >= $dragStart) {
+        for(my $inc = $dragStart; $inc <= $xcell; $inc++) {
+          $gtkObjects[$inc - 3][$dragRow - 2] = 0;
         }
         expose($this);
       } else {
-        for(my $inc = $xind; $inc <= $dragStart; $inc++) {
-          $gtkObjects[$inc][$dragRow] = 0;
+        for(my $inc = $xcell; $inc <= $dragStart; $inc++) {
+          $gtkObjects[$inc - 3][$dragRow - 2] = 0;
         }
         expose($this);
       }
