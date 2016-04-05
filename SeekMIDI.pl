@@ -26,6 +26,7 @@ package Gtk2::MIDIPlot;
 use Gtk2;
 use base 'Gtk2::ScrolledWindow';
 use Cairo;
+# use Pango;
 
 # makes a class-global array that holds true/false values for which note blocks are enabled, and the global drawing area
 my @gtkObjects;
@@ -108,9 +109,31 @@ sub expose {
   $thisCairo->set_source_rgb(0, 0, 0);
   for($inc = $ymin; $inc < $ymax; $inc++) {
     if($notes[127 - ($inc - 2)] == 1) {
-      $thisCairo->rectangle(($xmin - 3) * 12, $inc * 8, 36, 8);
+      $thisCairo->rectangle(($xmin - 3) * 12, $inc * 8 + 1, 32, 6);
     }
   }
+
+  # my $thisPango = Pango::Cairo::create_layout($thisCairo);
+  # my $thisPangoAttr = Pango::AttrList->new();
+  # $thisPangoAttr->insert(Pango::AttrSize->new(8));
+  # $thisPango->set_attributes($thisPangoAttr);
+  # $thisPango->set_font_description(Pango::FontDescription->from_string("Sans"));
+  # for($inc = $xmin; $inc < $xmax; $inc++) {
+  #   if($inc % 4 == 0) {
+  #     $thisCairo->save();
+  #     $thisPango->set_text($inc * 24);
+  #     Pango::Cairo::update_layout($thisCairo, $thisPango);
+  #     my ($PangoWidth, $PangoHeight) = $thisPango->get_size();
+  #     $thisCairo->move_to($inc * 12 - $PangoWidth / 2, $ymin * 8 + 8);
+  #     CORE::say("Pango:");
+  #     CORE::say($PangoWidth);
+  #     CORE::say($PangoHeight);
+  #     CORE::say("Cairo X:");
+  #     CORE::say($thisCairo->get_current_point());
+  #     Pango::Cairo::show_layout($thisCairo, $thisPango);
+  #     $thisCairo->restore();
+  #   }
+  # }
 
   # this checks for events with their state set to true, then draws them 
   for(my $incx = $xmin; $incx < $xmax; $incx++) {
@@ -132,27 +155,30 @@ sub button {
   # if the left mouse button then invert this gridbox's state value
   if ($event->button == 1) {
     my ($xcell, $ycell) = (($event->x - ($event->x % 12)) / 12, ($event->y - ($event->y % 8)) / 8);
-    if($gtkObjects[$xcell - 3][$ycell - 2] == 0) {
-      $gtkObjects[$xcell - 3][$ycell - 2] = 1;
+    my ($xmin, $ymin) = (int($this->parent->get_hadjustment()->value / 12) + 3, int($this->parent->get_vadjustment()->value / 8) + 2);
+    if($xcell >= $xmin && $ycell >= $ymin) {
+      if($gtkObjects[$xcell - 3][$ycell - 2] == 0) {
+        $gtkObjects[$xcell - 3][$ycell - 2] = 1;
 
-      # makes new Cairo context
-      my $thisCairo = Gtk2::Gdk::Cairo::Context->create($this->get_window());
+        # makes new Cairo context
+        my $thisCairo = Gtk2::Gdk::Cairo::Context->create($this->get_window());
 
-      $thisCairo->rectangle($xcell * 12, $ycell * 8, 12, 8);
-      $thisCairo->fill();
-      $dragMode = 1;
-    } else {
-      $gtkObjects[$xcell - 3][$ycell - 2] = 0;
-      $dragMode = 0;
-      expose();
-    }
+        $thisCairo->rectangle($xcell * 12, $ycell * 8, 12, 8);
+        $thisCairo->fill();
+        $dragMode = 1;
+      } else {
+        $gtkObjects[$xcell - 3][$ycell - 2] = 0;
+        $dragMode = 0;
+        expose();
+      }
 
-    # initialize drag variables
-    if($dragStart == -1) {
-      $dragStart = $xcell;
-    }
-    if($dragRow == -1) {
-      $dragRow = $ycell;
+      # initialize drag variables
+      if($dragStart == -1) {
+        $dragStart = $xcell;
+      }
+      if($dragRow == -1) {
+        $dragRow = $ycell;
+      }
     }
   }
 }
@@ -181,7 +207,7 @@ sub motion {
           $gtkObjects[$inc - 3][$dragRow - 2] = 1;
         }
       }
-    } else {
+    } elsif($dragMode == 0) {
       # checks whether our overall drag is to the left or right and updates $gtkObjects accordingly
       if($xcell >= $dragStart) {
         for(my $inc = $dragStart; $inc <= $xcell; $inc++) {
