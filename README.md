@@ -6,8 +6,6 @@ This is the home of SeekMIDI, a simple graphical MIDI song editor offering multi
 
 See [the wiki](https://github.com/oldtechaa/SeekMIDI/wiki/HowTo:-Install-and-Run).
 
-Please note: An empty filename value may crash the program.
-
 Eventually, we would like to provide packages for MIDI-Perl, and provide a full automated setup procedure for SeekMIDI. Right now, we're working on more important things. We also eventually plan to port it to Windows, but that is low priority. There are no plans to port it to OS X at this moment.
 
 ### Contribution guidelines ###
