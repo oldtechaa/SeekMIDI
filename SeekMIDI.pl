@@ -113,27 +113,19 @@ sub expose {
     }
   }
 
-  # my $thisPango = Pango::Cairo::create_layout($thisCairo);
-  # my $thisPangoAttr = Pango::AttrList->new();
-  # $thisPangoAttr->insert(Pango::AttrSize->new(8));
-  # $thisPango->set_attributes($thisPangoAttr);
-  # $thisPango->set_font_description(Pango::FontDescription->from_string("Sans"));
-  # for($inc = $xmin; $inc < $xmax; $inc++) {
-  #   if($inc % 4 == 0) {
-  #     $thisCairo->save();
-  #     $thisPango->set_text($inc * 24);
-  #     Pango::Cairo::update_layout($thisCairo, $thisPango);
-  #     my ($PangoWidth, $PangoHeight) = $thisPango->get_size();
-  #     $thisCairo->move_to($inc * 12 - $PangoWidth / 2, $ymin * 8 + 8);
-  #     CORE::say("Pango:");
-  #     CORE::say($PangoWidth);
-  #     CORE::say($PangoHeight);
-  #     CORE::say("Cairo X:");
-  #     CORE::say($thisCairo->get_current_point());
-  #     Pango::Cairo::show_layout($thisCairo, $thisPango);
-  #     $thisCairo->restore();
-  #   }
-  # }
+  my $thisPango = Pango::Cairo::create_layout($thisCairo);
+  my $thisPangoAttr = Pango::AttrList->new();
+  $thisPangoAttr->insert(Pango::AttrSize->new(8192));
+  $thisPango->set_attributes($thisPangoAttr);
+  CORE::say($xmin);
+  for($inc = $xmin - 3; $inc < $xmax - 2; $inc++) {
+    if($inc % 4 == 0) {
+      $thisPango->set_text($inc * 12);
+      my ($PangoWidth, $PangoHeight) = $thisPango->get_size();
+      $thisCairo->move_to($inc * 12 - $PangoWidth / Gtk2::Pango->scale() / 2 + 36, $ymin * 8 - 12);
+      Pango::Cairo::show_layout($thisCairo, $thisPango);
+    }
+  }
 
   # this checks for events with their state set to true, then draws them 
   for(my $incx = $xmin; $incx < $xmax; $incx++) {
