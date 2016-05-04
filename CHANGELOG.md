@@ -3,6 +3,7 @@ Notable changes will be documented here. This project strives for [Semantic Vers
 
 ## [Unreleased] - 2016-03-26
 ### Added
+- Right-click and drag now removes notes.
 - Bug fix for issue #11, which spews out a bunch of unnecessary warnings.
 - README now links to the wiki.
 - Fix for issue #15: higher notes are now at the top of the plotting area.
