@@ -26,12 +26,18 @@ package Gtk2::MIDIPlot;
 use Gtk2;
 use base 'Gtk2::VBox';
 use Cairo;
-# use Pango;
+use Pango;
 
 # makes a class-global array that holds true/false values for which note blocks are enabled, and the global drawing area
 my @gtkObjects;
+
 my $this;
+my $thisScroll;
+my $volSlider;
+my $HBox;
+
 my ($dragRow, $dragStart, $dragMode) = (-1, -1, -1);
+
 my @notes = (0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
              0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
              0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
@@ -43,16 +49,15 @@ my @notes = (0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
              0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
              0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
              0, 1, 0, 1, 0, 0, 1, 0);
-my $NOTE_WIDTH;
 
 # sets up the class; asks for the signals we need; sets main widget size
 sub new {
   $this = Gtk2::DrawingArea->new();
   my $topVBox = bless Gtk2::VBox->new();
-  my $thisScroll = Gtk2::ScrolledWindow->new();
-  my $HBox = Gtk2::HBox->new();
+  $thisScroll = Gtk2::ScrolledWindow->new();
+  $HBox = Gtk2::HBox->new();
   my $volLabel = Gtk2::Label->new('Volume: ');
-  my $volSlider = Gtk2::HScale->new_with_range(0, 127, 1);
+  $volSlider = Gtk2::HScale->new_with_range(0, 127, 1);
 
   $topVBox->pack_start($thisScroll, 1, 1, 0);
   $topVBox->pack_start($HBox, 0, 0, 0);
@@ -70,7 +75,7 @@ sub new {
   $thisScroll->get_vadjustment->signal_connect(value_changed => 'Gtk2::MIDIPlot::expose');
 
   # ask for mouse events from the DrawingArea
-  $this->set_events(["button-press-mask", "button-motion-mask", "button-release-mask"]);
+  $this->set_events(['button-press-mask', 'button-motion-mask', 'button-release-mask']);
 
   $this->set_size_request(28836, 1040);
 
@@ -95,7 +100,7 @@ sub expose {
   $thisCairo->set_source_rgb(0.75, 0.75, 0.75);
 
   # get the current scroll positions and size of the window, then convert to grid-blocks, adjusting to draw surrounding blocks also, and make sure we don't go out of bounds
-  my ($xmin, $ymin, $width, $height) = (int($this->parent->get_hadjustment()->value / 12) + 3, int($this->parent->get_vadjustment()->value / 8) + 2, $this->parent->get_hadjustment()->page_size - 36, $this->parent->get_vadjustment()->page_size - 16);
+  my ($xmin, $ymin, $width, $height) = (int($thisScroll->get_hadjustment()->value / 12) + 3, int($thisScroll->get_vadjustment()->value / 8) + 2, $thisScroll->get_hadjustment()->page_size - 36, $thisScroll->get_vadjustment()->page_size - 16);
   my $xmax = ($xmin + (int($width / 12) + 2));
   my $ymax = ($ymin + (int($height / 8) + 2));
   if($xmax > 2403) {$xmax = 2403};
@@ -153,7 +158,7 @@ sub button {
   my $event = $_[1];
 
   my ($xcell, $ycell) = (($event->x - ($event->x % 12)) / 12, ($event->y - ($event->y % 8)) / 8);
-  my ($xmin, $ymin) = (int($this->parent->get_hadjustment()->value / 12) + 3, int($this->parent->get_vadjustment()->value / 8) + 2);
+  my ($xmin, $ymin) = (int($thisScroll->get_hadjustment()->value / 12) + 3, int($thisScroll->get_vadjustment()->value / 8) + 2);
 
   # if the left mouse button then invert this gridbox's state value
   if ($event->button == 1) {
@@ -269,9 +274,17 @@ sub getMIDI {
   return \@events;
 }
 
+sub get_HBox {
+  return $HBox;
+}
+
 package main;
 
-use lib './lib/';
+# append to @INC the script dir's subdir 'lib' for MIDI.pm
+use FindBin;
+use File::Spec;
+use lib File::Spec->catdir($FindBin::Bin, 'lib');
+
 use MIDI;
 use Gtk2 -init;
 # use Locale::gettext;
@@ -289,24 +302,24 @@ sub midiWrite {
 
 # reads from the event file (future capability, not sure if it will be added) This is just for testing, to reach early milestones without an event entry control.
 # would mainly be useful if there was ever a CLI version or if the GUI version had the capability to read non-MIDI projects.
-sub evtOpen {
-	my $evtFile = shift;
-	my @events;
-
-	open(my $evtHandle, "<", $evtFile);
-
-	while (<$evtHandle>) {
-		push(@events, [split(/,\s*/, $_)]);
-	};
-
-        close($evtHandle);
-
-	return \@events;
-}
+#sub evtOpen {
+#  my $evtFile = shift;
+#  my @events;
+#
+#  open(my $evtHandle, '<', $evtFile);
+#
+#  while (<$evtHandle>) {
+#    push(@events, [split(/,\s*/, $_)]);
+#  };
+#
+#  close($evtHandle);
+#
+#  return \@events;
+#}
 
 # creates window with title
 my $window = Gtk2::Window->new();
-$window->set_title("SeekMIDI MIDI Sequencer");
+$window->set_title('SeekMIDI MIDI Sequencer');
 
 # creates VBox for widgets along the top and the main widget area below
 my $mainVBox = Gtk2::VBox->new(0, 6);
@@ -317,7 +330,7 @@ my $controlHBox = Gtk2::HBox->new(0, 6);
 $mainVBox->pack_start($controlHBox, 0, 0, 0);
 
 # creates label for filename entry
-my $fileLabel = Gtk2::Label->new("Output Filename:");
+my $fileLabel = Gtk2::Label->new('Output Filename:');
 $controlHBox->pack_start($fileLabel, 0, 0, 0);
 
 # creates filename entry field
@@ -325,7 +338,7 @@ my $fileEntry = Gtk2::Entry->new();
 $controlHBox->pack_start($fileEntry, 0, 0, 0);
 
 # creates file save button
-my $saveButton = Gtk2::Button->new("_Save");
+my $saveButton = Gtk2::Button->new('_Save');
 $controlHBox->pack_start($saveButton, 0, 0, 0);
 
 # creates main widget
@@ -336,6 +349,7 @@ $saveButton->signal_connect(clicked => sub{midiWrite($mainWidget->getMIDI(), 96,
 # starts up the GUI
 $window->signal_connect(destroy => sub{Gtk2->main_quit()});
 $window->show_all();
+$mainWidget->get_HBox()->hide();
 Gtk2->main();
 
 0;
