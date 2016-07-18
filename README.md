@@ -1,6 +1,8 @@
 ### What is this repository for? ###
 
-This is the home of SeekMIDI, a simple graphical MIDI song editor offering multi-channel MIDI editing. Look at [Seq24](https://launchpad.net/seq24/) for a slightly heavier example of what we mean. Written in Perl, SeekMIDI uses GTK+2 and Cairo to provide its GUI and MIDI-Perl to provide its MIDI handling system. We have released one version: 0.1.0. Please download it and try it out.
+This is the home of SeekMIDI, a simple graphical MIDI sequencer offering multi-channel MIDI sequencing. Look at [Seq24](https://launchpad.net/seq24/) for a slightly heavier example of what we mean.
+Written in Perl, SeekMIDI uses GTK+2 and Cairo to provide its GUI and MIDI-Perl to provide its MIDI handling system. We have released one version: 0.1.0. Please download it and try it out.
+For the latest features, you can also use git to download the latest master. We aim to keep master somewhat stable so as not to have to release as often.
 
 __Please keep in mind that SeekMIDI is still alpha software and features are constantly being implemented.__
 
@@ -8,7 +10,7 @@ __Please keep in mind that SeekMIDI is still alpha software and features are con
 
 See [the wiki](https://github.com/oldtechaa/SeekMIDI/wiki/HowTo:-Install-and-Run).
 
-Eventually, we would like to provide packages for MIDI-Perl, and provide a full automated setup procedure for SeekMIDI. Right now, we're working on more important things. There are no plans to port it to Windows or OS X at this moment, although a third-party port would not be discouraged.
+We will soon have a full automated setup procedure for SeekMIDI. There are no plans to port it to Windows or OS X at this moment, although a third-party port would not be discouraged.
 
 ### Contribution guidelines ###
 
