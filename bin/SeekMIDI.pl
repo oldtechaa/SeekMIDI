@@ -34,7 +34,7 @@ my @notes;
 my $this;
 my $thisScroll;
 my $volSlider;
-my $HBox;
+my $VBox;
 
 my ($dragRow, $dragStart, $dragMode) = (-1, -1, -1);
 
@@ -50,40 +50,45 @@ my @keys = (0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
              0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
              0, 1, 0, 1, 0, 0, 1, 0);
 
-my @selectSingle = (-1, -1);
+my @selSingle = (-1, -1);
 
-my ($cellWidth, $cellHeight, $numCells, $cellTime) = (12, 8, 2400, 6);
+my ($cellWidth, $cellHeight, $numCells, $cellTime, $defaultVol) = (12, 8, 2400, 6, 127);
 
 # sets up the class; asks for the signals we need; sets main widget size
 sub new {
   $this = Gtk2::DrawingArea->new();
-  my $topVBox = bless Gtk2::VBox->new();
+  my $topHBox = bless Gtk2::HBox->new();
   $thisScroll = Gtk2::ScrolledWindow->new();
-  $HBox = Gtk2::HBox->new();
-  my $volLabel = Gtk2::Label->new('Volume: ');
-  $volSlider = Gtk2::HScale->new_with_range(0, 127, 1);
+  $VBox = Gtk2::VBox->new();
+  my $volLabel = Gtk2::Label->new('Vol: ');
+  $volSlider = Gtk2::VScale->new_with_range(0, 127, 1);
+  
+  $volSlider->set_inverted(1);
 
-  $topVBox->pack_start($thisScroll, 1, 1, 0);
-  $topVBox->pack_start($HBox, 0, 0, 0);
+  $topHBox->pack_start($thisScroll, 1, 1, 0);
+  $topHBox->pack_start($VBox, 0, 0, 0);
 
   $thisScroll->add_with_viewport($this);
 
-  $HBox->pack_start($volLabel, 0, 0, 0);
-  $HBox->pack_start($volSlider, 1, 1, 0);
+  $VBox->pack_start($volLabel, 0, 0, 0);
+  $VBox->pack_start($volSlider, 1, 1, 0);
 
   $this->signal_connect(expose_event => 'Gtk2::MIDIPlot::expose');
   $this->signal_connect(button_press_event => 'Gtk2::MIDIPlot::button');
-  $this->signal_connect(button_release_event => 'Gtk2::MIDIPlot::release');
   $this->signal_connect(motion_notify_event => 'Gtk2::MIDIPlot::motion');
+  $this->signal_connect(button_release_event => 'Gtk2::MIDIPlot::release');
+  
   $thisScroll->get_hadjustment->signal_connect(value_changed => 'Gtk2::MIDIPlot::expose');
   $thisScroll->get_vadjustment->signal_connect(value_changed => 'Gtk2::MIDIPlot::expose');
+  
+  $volSlider->get_adjustment->signal_connect(value_changed => 'Gtk2::MIDIPlot::volChanged');
 
   # ask for mouse events from the DrawingArea
   $this->set_events(['button-press-mask', 'button-motion-mask', 'button-release-mask']);
 
   $this->set_size_request(($numCells + 3) * $cellWidth, 130 * $cellHeight);
 
-  return $topVBox;
+  return $topHBox;
 }
 
 # refresh handler; handles drawing grid and objects
@@ -106,16 +111,8 @@ sub expose {
   # these two loops create the background grid
   my $inc;
   for ($xmin .. $xmax) {
-    #if (($_ - 3) % (96 / $cellTime) == 0) {
-    #  $thisCairo->stroke();
-    #  $thisCairo->set_source_rgb(0.5, 0.5, 0.5);
-    #}
     $thisCairo->move_to($_ * $cellWidth, $ymin * $cellHeight);
     $thisCairo->line_to($_ * $cellWidth, $ymax * $cellHeight);
-    #if (($_ - 3) % (96 / $cellTime) == 0) {
-    #  $thisCairo->stroke();
-    #  $thisCairo->set_source_rgb(0.75, 0.75, 0.75);
-    #}
   }
   for ($ymin .. $ymax) {
     $thisCairo->move_to($xmin * $cellWidth, $_ * $cellHeight);
@@ -193,7 +190,7 @@ sub button {
   if ($event->button == 1) {
     if ($xcell >= $xmin && $ycell >= $ymin) {
       if (is_Enabled($x, $y)) {
-        # selection or moving
+        selNote($notes[$x][$y][2], $y);
       } else {
         addNote($x, $y);
 
@@ -211,11 +208,17 @@ sub button {
   } elsif ($event->button == 3) {
     if ($xcell >= $xmin && $ycell >= $ymin) {
       if (is_Enabled($x, $y)) {
+        @selSingle = (-1, -1) if @selSingle = ($notes[$x][$y][2], $y);
+
         for ($notes[$x][$y][2] .. $notes[$x][$y][2] + $notes[$notes[$x][$y][2]][$y][3] - 1) {
           $notes[$_][$y][0] = 0;
         }
+                
         expose();
+      } else {
+        @selSingle = (-1, -1);
       }
+      $VBox->hide();
     }
   }
 }
@@ -262,6 +265,23 @@ sub addNote {
       last;
     }
   }
+  
+  selNote($notes[$x][$y][2], $y);
+}
+
+sub selNote {
+	my ($x, $y) = @_;
+	@selSingle = ($x, $y);
+	
+  $VBox->show();
+  if (!$notes[$notes[$x][$y][2]][$y][4]) {
+    $notes[$notes[$x][$y][2]][$y][4] = $defaultVol;
+  }
+  $volSlider->get_adjustment()->set_value($notes[$notes[$x][$y][2]][$y][4]);
+}
+
+sub volChanged {
+  $notes[$selSingle[0]][$selSingle[1]][4] = shift->get_value();
 }
 
 sub getMIDI {
@@ -271,17 +291,17 @@ sub getMIDI {
 
   for (0 .. 127) {
     if (is_Enabled(0, $_)) {
-      push(@events, ['note_on', 0, 0, 127 - $_, 127]);
+      push(@events, ['note_on', 0, 0, 127 - $_, $notes[0][$_][4]]);
     }
   }
   my $delta = $cellTime;
   for my $incx (1 .. $numCells) {
     for my $incy (0 .. 127) {
       if (!is_Enabled($incx, $incy) && is_Enabled($incx - 1, $incy)) {
-        push(@events, ['note_off', $delta, 0, 127 - $incy, 127]);
+        push(@events, ['note_off', $delta, 0, 127 - $incy, $notes[$notes[$incx - 1][$incy][2]][$incy][4]]);
         $delta = 0;
       } elsif (is_Enabled($incx, $incy) && !is_Enabled($incx - 1, $incy)) {
-        push(@events, ['note_on', $delta, 0, 127 - $incy, 127]);
+        push(@events, ['note_on', $delta, 0, 127 - $incy, $notes[$incx][$incy][4]]);
         $delta = 0;
       }
     }
@@ -291,8 +311,8 @@ sub getMIDI {
   return \@events;
 }
 
-sub get_HBox {
-  return $HBox;
+sub get_VBox {
+  return $VBox;
 }
 
 sub is_Enabled {
@@ -358,7 +378,7 @@ $saveButton->signal_connect(clicked => sub{midiWrite($mainWidget->getMIDI(), 24,
 # starts up the GUI
 $window->signal_connect(destroy => sub{Gtk2->main_quit()});
 $window->show_all();
-$mainWidget->get_HBox()->hide();
+$mainWidget->get_VBox()->hide();
 Gtk2->main();
 
 0;
