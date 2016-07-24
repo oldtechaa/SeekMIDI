@@ -1,0 +1,6 @@
+{
+  "name": "SeekMIDI",
+  "tagline": "SeekMIDI, a simple graphical multi-channel MIDI sequencer.",
+  "body": "### Welcome to SeekMIDI\r\n\r\nSeekMIDI is a simple multi-channel MIDI sequencer for quick song creation. We'll post some screenshots here soon.\r\n\r\n### How to get it\r\n\r\nWe recommend that if you have git experience, you clone the master. Because we're under fairly rapid development, the master will have the latest features.",
+  "note": "Don't delete this file! It's used internally to help with page regeneration."
+}
