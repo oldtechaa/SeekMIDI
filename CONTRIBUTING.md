@@ -1,11 +1,13 @@
-Thanks for contributing to SeekMIDI!
+# How to Contribute #
 
-First of all, our code of conduct restricts anyone involved in the SeekMIDI project from posting anything offensive, rude, hurtful, or in other ways unpleasant to others. This does not include technical criticism of design choices; otherwise, we never would get anywhere without feedback. Please watch your language when working on SeekMIDI!
+## Why Contribute ##
 
-Second, if you have the know-how and the time, you could check out the ["help-wanted"](https://github.com/oldtechaa/SeekMIDI/labels/help%20wanted) issues.
+Perhaps you want new functionality in SeekMIDI, or you've found a bug. Perhaps you just want to help out somewhere and think this would be a good place to start. We can certainly use your help, and we welcome contributors! It's a big job to write any program, especially only in your free time.
 
-If you would like to help edit the wiki, please do so. Documentation is a tough task, so any help is appreciated.
+## Where to Start ##
 
-If you would like to donate to the project, please email me at [oldtechaa@gmail.com](mailto:oldtechaa@gmail.com).
+If you're looking to add a new feature, prepare
 
-I would love emails from you if you plan to contribute on anything, but it's not strictly necessary.
+## Getting SeekMIDI ##
+
+Follow [these directions](https://help.github.com/articles/cloning-a-repository/) to download the repo. Begin development!
