@@ -16,7 +16,6 @@ Notable changes will be documented here. This project strives for [Semantic Vers
 - Left-click and drag now adds notes, right-click removes.
 - No longer rely on installation of MIDI-Perl. It is now included in the source directory under lib/.
 - SeekMIDI.pl can now be found in the bin/ directory.
-- Changed GTK version to GTK+3.
 
 ## 0.01 - 2016-03-25
 ### Added
