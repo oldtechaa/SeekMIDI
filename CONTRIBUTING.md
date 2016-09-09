@@ -14,6 +14,28 @@ To help out, look through the sections below for the type of contribution you wo
 
 Follow [these directions](https://help.github.com/articles/cloning-a-repository/) to download the repo. Begin development!
 
+### Making Changes ###
+
+Here are some guidelines on coding style for changes:
+
+ * Use two space indentation. Not tabs.
+
+ * Functions should be called in this style: $foo->bar()
+
+ * Keywords and built-ins should be called in this style: for ()
+
+ * Properties of a class should not use parentheses, like this: $foo->bar
+
+ * Use perlish fors when possible, declaring the count variable before the opening parentheses. C-style loops should generally be avoided.
+
+ * Use good judgement when choosing to optimise for performance versus readability. If some "performance optimisation" is not generally accepted as improving performance and harms readability, don't use it.
+
+ * Use single quotes when not including variables to be escaped, double quotes if including escaped variables.
+
+ * Comment your code as you add major new features.
+
+ * For anything not mentioned here, take a look at the existing code for examples of how to format things.
+
 ### Submitting Pull Requests ###
 
 Follow [these directions](https://help.github.com/articles/creating-a-pull-request/) to submit a pull request to the repository when done with your changes.
