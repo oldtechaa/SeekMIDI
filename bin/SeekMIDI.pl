@@ -17,27 +17,32 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# ALWAYS MAINTAIN NO WARNINGS AND NO ERRORS!
 use strict;
 use warnings;
 
 # custom widget class; separate from main package below
 package Gtk2::MIDIPlot;
 
+# invoke dependency modules
 use Gtk2;
 use base 'Gtk2::VBox';
 use Cairo;
 use Pango;
 
-# makes a class-global array that holds note objects, and the global drawing area
+# makes a package-global array that holds note objects, and the global drawing area
 my @notes;
 
+# set up package-global variables for widgets that need to be accessed throughout the package
 my $this;
 my $thisScroll;
 my $volSlider;
 my $VBox;
 
+# initialize the drag variables to a no-drag state
 my ($dragRow, $dragStart, $dragMode) = (-1, -1, -1);
 
+# set up black-white key pattern on left sidebar
 my @keys = (0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
              0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
              0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
@@ -50,8 +55,10 @@ my @keys = (0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
              0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
              0, 1, 0, 1, 0, 0, 1, 0);
 
+# set up single note selection
 my @selSingle = (-1, -1);
 
+# set some global constants
 my ($cellWidth, $cellHeight, $numCells, $cellTime, $defaultVol) = (12, 8, 2400, 6, 127);
 
 # sets up the class; asks for the signals we need; sets main widget size
@@ -92,6 +99,7 @@ sub new {
 }
 
 # refresh handler; handles drawing grid and objects
+# NOTE: $xmin, $ymin refer to grid area coordinates, NOT global drawing area coordinates. 3 cells on the left and 2 on top are taken by sidebar and header
 sub expose {
   $this->window->clear();
 
@@ -124,10 +132,13 @@ sub expose {
 
   $thisCairo->set_source_rgb(0.5, 0.5, 0.5);
 
+  # set up Pango for time header
   my $thisPango = Pango::Cairo::create_layout($thisCairo);
   my $thisPangoAttr = Pango::AttrList->new();
   $thisPangoAttr->insert(Pango::AttrSize->new(8192));
   $thisPango->set_attributes($thisPangoAttr);
+  
+  # draw time header and darker lines on time divisions
   for ($xmin - 3 .. $xmax - 3) {
     if ($_ % (96 / $cellTime) == 0) {
       $thisCairo->move_to(($_ + 3) * $cellWidth, $ymin * $cellHeight);
@@ -139,6 +150,8 @@ sub expose {
       Pango::Cairo::show_layout($thisCairo, $thisPango);
     }
   }
+  
+  # draw darker top and bottom lines
   if ($ymin == 2) {
     $thisCairo->move_to($xmin * $cellWidth, 2 * $cellHeight);
     $thisCairo->line_to($xmax * $cellWidth, 2 * $cellHeight);
@@ -148,8 +161,10 @@ sub expose {
     $thisCairo->line_to($xmax * $cellWidth, 130 * $cellHeight);
   }
   
+  # stroke the darker lines
   $thisCairo->stroke();
 
+  # create the piano key sidebar
   $thisCairo->set_source_rgb(0, 0, 0);
   for ($ymin .. $ymax - 1) {
     if ($keys[127 - ($_ - 2)] == 1) {
@@ -157,7 +172,7 @@ sub expose {
     }
   }
   
-  # this checks for events with their state set to true, then draws them 
+  # this checks for events with their state set to true, then draws them, scanning the leftmost column first, then all others
   for ($ymin .. $ymax - 1) {
     if (is_Enabled($xmin - 3, $_ - 2)) {
       my $startNote = $notes[$xmin - 3][$_ - 2][2];
@@ -186,15 +201,17 @@ sub button {
   
   my $maxCell = $numCells - 1;
 
-  # if the left mouse button then invert this gridbox's state value
+  # left mouse button
   if ($event->button == 1) {
     if ($xcell >= $xmin && $ycell >= $ymin) {
       if (is_Enabled($x, $y)) {
+        # select a note
         selNote($notes[$x][$y][2], $y);
       } else {
+        # add a note
         addNote($x, $y);
 
-        # makes new Cairo context
+        # makes new Cairo context to draw a rectangle without causing an entire redraw
         my $thisCairo = Gtk2::Gdk::Cairo::Context->create($this->get_window());
 
         $thisCairo->rectangle(($notes[$x][$y][2] + 3) * $cellWidth, $ycell * $cellHeight, $notes[$notes[$x][$y][2]][$y][3] * $cellWidth, $cellHeight);
@@ -204,10 +221,11 @@ sub button {
         $dragRow = $y;
       }
     }
-  # if the right mouse button remove the note
+  # right mouse button
   } elsif ($event->button == 3) {
     if ($xcell >= $xmin && $ycell >= $ymin) {
       if (is_Enabled($x, $y)) {
+        # remove the note
         @selSingle = (-1, -1) if @selSingle = ($notes[$x][$y][2], $y);
 
         for ($notes[$x][$y][2] .. $notes[$x][$y][2] + $notes[$notes[$x][$y][2]][$y][3] - 1) {
@@ -216,8 +234,10 @@ sub button {
                 
         expose();
       } else {
+        # turn off selection
         @selSingle = (-1, -1);
       }
+      # hide volume slider
       $VBox->hide();
     }
   }
@@ -245,11 +265,12 @@ sub motion {
   }
 }
 
-# clears the current drag row, start point, and drag mode when the drag is ended
+# clears the current drag row and mode when the drag is ended
 sub release {
   ($dragRow, $dragMode) = (-1, -1);
 }
 
+# creates a new note and selects it
 sub addNote {
   my ($x, $y) = @_;
   
@@ -269,10 +290,12 @@ sub addNote {
   selNote($notes[$x][$y][2], $y);
 }
 
+# sets a note's selected attribute to true
 sub selNote {
 	my ($x, $y) = @_;
 	@selSingle = ($x, $y);
 	
+  # show volume slider for selected note
   $VBox->show();
   if (!$notes[$notes[$x][$y][2]][$y][4]) {
     $notes[$notes[$x][$y][2]][$y][4] = $defaultVol;
@@ -280,10 +303,12 @@ sub selNote {
   $volSlider->get_adjustment()->set_value($notes[$notes[$x][$y][2]][$y][4]);
 }
 
+# changes volume attribute of a note
 sub volChanged {
   $notes[$selSingle[0]][$selSingle[1]][4] = shift->get_value();
 }
 
+# gets the actual MIDI data for output
 sub getMIDI {
   my @events;
 
@@ -311,10 +336,12 @@ sub getMIDI {
   return \@events;
 }
 
+# makes it so we can get the VBox from outside the package
 sub get_VBox {
   return $VBox;
 }
 
+# tells us whether a cell contains (part of) a note
 sub is_Enabled {
   my ($x, $y) = @_;
   if ($notes[$x][$y][0] && $notes[$x][$y][0] == 1) {
