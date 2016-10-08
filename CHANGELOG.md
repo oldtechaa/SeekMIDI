@@ -1,7 +1,7 @@
 # Change Log
 Notable changes will be documented here. This project strives for [Semantic Versioning](http://semver.org/) adherence and follows the format from [Keep a Changelog](http://keepachangelog.com/).
 
-## [Unreleased] - 2016-03-26
+## [0.2.0] - 2016-10-08
 ### Added
 - Measure markings are provided at the top and throughout the note grid.
 - README now links to the wiki.
