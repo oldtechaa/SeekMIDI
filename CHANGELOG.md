@@ -1,5 +1,5 @@
 # Change Log
-Notable changes will be documented here. This project strives for [Semantic Versioning](http://semver.org/) adherence.
+Notable changes will be documented here. This project strives for [Semantic Versioning](http://semver.org/) adherence and follows the format from [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased] - 2016-03-26
 ### Added
@@ -23,4 +23,5 @@ Notable changes will be documented here. This project strives for [Semantic Vers
 ### Added
 - First release. Added the last bit of code for getting the MIDI output from the GUI.
 
-[Unreleased]: https://github.com/oldtechaa/SeekMIDI/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/oldtechaa/SeekMIDI/compare/v0.2.0-alpha...HEAD
+[0.2.0]: https://github.com/oldtechaa/SeekMIDI/compare/v0.1.0-alpha...v0.2.0-alpha
