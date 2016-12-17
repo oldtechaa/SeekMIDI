@@ -22,11 +22,11 @@ use strict;
 use warnings;
 
 # custom widget class; separate from main package below
-package Gtk2::MIDIPlot;
+package Gtk3::MIDIPlot;
 
 # invoke dependency modules
-use Gtk2;
-use base 'Gtk2::VBox';
+use Gtk3;
+use base 'Gtk3::VBox';
 use Cairo;
 use Pango;
 
@@ -63,12 +63,12 @@ my ($cellWidth, $cellHeight, $numCells, $cellTime, $defaultVol) = (12, 8, 2400, 
 
 # sets up the class; asks for the signals we need; sets main widget size
 sub new {
-  $this = Gtk2::DrawingArea->new();
-  my $topHBox = bless Gtk2::HBox->new();
-  $thisScroll = Gtk2::ScrolledWindow->new();
-  $VBox = Gtk2::VBox->new();
-  my $volLabel = Gtk2::Label->new('Vol: ');
-  $volSlider = Gtk2::VScale->new_with_range(0, 127, 1);
+  $this = Gtk3::DrawingArea->new();
+  my $topHBox = bless Gtk3::HBox->new();
+  $thisScroll = Gtk3::ScrolledWindow->new();
+  $VBox = Gtk3::VBox->new();
+  my $volLabel = Gtk3::Label->new('Vol: ');
+  $volSlider = Gtk3::VScale->new_with_range(0, 127, 1);
   
   $volSlider->set_inverted(1);
 
@@ -80,18 +80,16 @@ sub new {
   $VBox->pack_start($volLabel, 0, 0, 0);
   $VBox->pack_start($volSlider, 1, 1, 0);
 
-  $this->signal_connect(expose_event => 'Gtk2::MIDIPlot::expose');
-  $this->signal_connect(button_press_event => 'Gtk2::MIDIPlot::button');
-  $this->signal_connect(motion_notify_event => 'Gtk2::MIDIPlot::motion');
-  $this->signal_connect(button_release_event => 'Gtk2::MIDIPlot::release');
+  $this->signal_connect(draw => 'Gtk3::MIDIPlot::refresh');
+  $this->signal_connect(button_press_event => 'Gtk3::MIDIPlot::button');
+  $this->signal_connect(motion_notify_event => 'Gtk3::MIDIPlot::motion');
+  $this->signal_connect(button_release_event => 'Gtk3::MIDIPlot::release');
+  $this->signal_connect(realize => 'Gtk3::MIDIPlot::set_mouse_events');
   
-  $thisScroll->get_hadjustment->signal_connect(value_changed => 'Gtk2::MIDIPlot::expose');
-  $thisScroll->get_vadjustment->signal_connect(value_changed => 'Gtk2::MIDIPlot::expose');
+  $thisScroll->get_hadjustment->signal_connect(value_changed => 'Gtk3::MIDIPlot::queue_draw');
+  $thisScroll->get_vadjustment->signal_connect(value_changed => 'Gtk3::MIDIPlot::queue_draw');
   
-  $volSlider->get_adjustment->signal_connect(value_changed => 'Gtk2::MIDIPlot::volChanged');
-
-  # ask for mouse events from the DrawingArea
-  $this->set_events(['button-press-mask', 'button-motion-mask', 'button-release-mask']);
+  $volSlider->get_adjustment->signal_connect(value_changed => 'Gtk3::MIDIPlot::volChanged');
 
   $this->set_size_request(($numCells + 3) * $cellWidth, 130 * $cellHeight);
 
@@ -100,17 +98,15 @@ sub new {
 
 # refresh handler; handles drawing grid and objects
 # NOTE: $xmin, $ymin refer to grid area coordinates, NOT global drawing area coordinates. 3 cells on the left and 2 on top are taken by sidebar and header
-sub expose {
-  $this->window->clear();
-
+sub refresh {
   # makes new Cairo context
-  my $thisCairo = Gtk2::Gdk::Cairo::Context->create($this->get_window());
+  my $thisCairo = $_[1];
 
   # sets drawing color for main grid
   $thisCairo->set_source_rgb(0.75, 0.75, 0.75);
 
   # get the current scroll positions and size of the window, then convert to grid-blocks, adjusting to draw surrounding blocks also, and make sure we don't go out of bounds
-  my ($xmin, $ymin, $width, $height) = (int($thisScroll->get_hadjustment()->value / $cellWidth) + 3, int($thisScroll->get_vadjustment()->value / $cellHeight) + 2, $thisScroll->get_hadjustment()->page_size - ($cellWidth * 3), $thisScroll->get_vadjustment()->page_size - ($cellHeight * 2));
+  my ($xmin, $ymin, $width, $height) = (int($thisScroll->get_hadjustment()->get_value() / $cellWidth) + 3, int($thisScroll->get_vadjustment()->get_value() / $cellHeight) + 2, $thisScroll->get_hadjustment()->get_page_size() - ($cellWidth * 3), $thisScroll->get_vadjustment()->get_page_size() - ($cellHeight * 2));
   my $xmax = ($xmin + (int($width / $cellWidth) + 2));
   my $ymax = ($ymin + (int($height / $cellHeight) + 2));
   $xmax = $numCells + 3 if $xmax > $numCells + 3;
@@ -146,7 +142,7 @@ sub expose {
       
       $thisPango->set_text($_ / (96 / $cellTime));
       my ($PangoWidth, $PangoHeight) = $thisPango->get_size();
-      $thisCairo->move_to($_ * $cellWidth - $PangoWidth / Gtk2::Pango->scale() / 2 + 3 * $cellWidth, $ymin * $cellHeight - ($cellHeight * 1.5));
+      $thisCairo->move_to($_ * $cellWidth - $PangoWidth / Pango->scale() / 2 + 3 * $cellWidth, $ymin * $cellHeight - ($cellHeight * 1.5));
       Pango::Cairo::show_layout($thisCairo, $thisPango);
     }
   }
@@ -196,7 +192,7 @@ sub button {
   my $event = $_[1];
 
   my ($xcell, $ycell) = (($event->x - ($event->x % $cellWidth)) / $cellWidth, ($event->y - ($event->y % $cellHeight)) / $cellHeight);
-  my ($xmin, $ymin) = (int($thisScroll->get_hadjustment()->value / $cellWidth) + 3, int($thisScroll->get_vadjustment()->value / $cellHeight) + 2);
+  my ($xmin, $ymin) = (int($thisScroll->get_hadjustment()->get_value() / $cellWidth) + 3, int($thisScroll->get_vadjustment()->get_value() / $cellHeight) + 2);
   my ($x, $y) = ($xcell - 3, $ycell - 2);
   
   my $maxCell = $numCells - 1;
@@ -211,11 +207,13 @@ sub button {
         # add a note
         addNote($x, $y);
 
-        # makes new Cairo context to draw a rectangle without causing an entire redraw
-        my $thisCairo = Gtk2::Gdk::Cairo::Context->create($this->get_window());
-
-        $thisCairo->rectangle(($notes[$x][$y][2] + 3) * $cellWidth, $ycell * $cellHeight, $notes[$notes[$x][$y][2]][$y][3] * $cellWidth, $cellHeight);
-        $thisCairo->fill();
+        ### # makes new Cairo context to draw a rectangle without causing an entire redraw
+        ### my $thisCairo = Gtk3::Gdk::Cairo::Context->create($this->get_window());
+        ### 
+        ### $thisCairo->rectangle(($notes[$x][$y][2] + 3) * $cellWidth, $ycell * $cellHeight, $notes[$notes[$x][$y][2]][$y][3] * $cellWidth, $cellHeight);
+        ### $thisCairo->fill();
+        
+        queue_draw();
         
         $dragMode = 0;
         $dragRow = $y;
@@ -231,14 +229,13 @@ sub button {
         for ($notes[$x][$y][2] .. $notes[$x][$y][2] + $notes[$notes[$x][$y][2]][$y][3] - 1) {
           $notes[$_][$y][0] = 0;
         }
-                
-        expose();
       } else {
         # turn off selection
         @selSingle = (-1, -1);
       }
       # hide volume slider
       $VBox->hide();
+      queue_draw();
     }
   }
 }
@@ -248,7 +245,7 @@ sub motion {
   my $event = $_[1];
   
   my ($xcell, $ycell) = (($event->x - ($event->x % $cellWidth)) / $cellWidth, ($event->y - ($event->y % $cellHeight)) / $cellHeight);
-  my ($xmin, $ymin) = (int($thisScroll->get_hadjustment()->value / $cellWidth) + 3, int($thisScroll->get_vadjustment()->value / $cellHeight) + 2);
+  my ($xmin, $ymin) = (int($thisScroll->get_hadjustment()->get_value() / $cellWidth) + 3, int($thisScroll->get_vadjustment()->get_value() / $cellHeight) + 2);
   my ($x, $y) = ($xcell - 3, $ycell - 2);
   
   # check if the underlying cell is set or not and if not, check which mouse button is pressed, then draw and set $notes
@@ -256,11 +253,13 @@ sub motion {
     if ($xcell >= $xmin) {
       addNote($x, $dragRow);
       
-      # makes new Cairo context
-      my $thisCairo = Gtk2::Gdk::Cairo::Context->create($this->get_window());
+      ### # makes new Cairo context
+      ### my $thisCairo = Gtk3::Gdk::Cairo::Context->create($this->get_window());
+      ### 
+      ### $thisCairo->rectangle(($notes[$x][$dragRow][2] + 3) * $cellWidth, ($dragRow + 2) * $cellHeight, $notes[$notes[$x][$dragRow][2]][$dragRow][3] * $cellWidth, $cellHeight);
+      ### $thisCairo->fill();
       
-      $thisCairo->rectangle(($notes[$x][$dragRow][2] + 3) * $cellWidth, ($dragRow + 2) * $cellHeight, $notes[$notes[$x][$dragRow][2]][$dragRow][3] * $cellWidth, $cellHeight);
-      $thisCairo->fill();
+      queue_draw();
     }
   }
 }
@@ -351,6 +350,16 @@ sub is_Enabled {
   }
 }
 
+# queue a refresh
+sub queue_draw {
+	$this->queue_draw();
+}
+
+# ask for mouse events from the DrawingArea
+sub set_mouse_events {
+  $this->get_window()->set_events(['button-press-mask', 'button-motion-mask', 'button-release-mask']);
+}
+
 package main;
 
 # append to @INC the script dir's subdir 'lib' for MIDI.pm
@@ -359,7 +368,7 @@ use File::Spec;
 use lib File::Spec->catdir($FindBin::Bin, '../lib');
 
 use MIDI;
-use Gtk2 -init;
+use Gtk3 -init;
 # use Locale::gettext;
 
 # writes the MIDI output to a file based on the list of events and the filename
@@ -374,38 +383,38 @@ sub midiWrite {
 }
 
 # creates window with title
-my $window = Gtk2::Window->new();
+my $window = Gtk3::Window->new();
 $window->set_title('SeekMIDI MIDI Sequencer');
 
 # creates VBox for widgets along the top and the main widget area below
-my $mainVBox = Gtk2::VBox->new(0, 6);
+my $mainVBox = Gtk3::VBox->new(0, 6);
 $window->add($mainVBox);
 
 # creates HBox for widgets along the top
-my $controlHBox = Gtk2::HBox->new(0, 6);
+my $controlHBox = Gtk3::HBox->new(0, 6);
 $mainVBox->pack_start($controlHBox, 0, 0, 0);
 
 # creates label for filename entry
-my $fileLabel = Gtk2::Label->new('Output Filename:');
+my $fileLabel = Gtk3::Label->new('Output Filename:');
 $controlHBox->pack_start($fileLabel, 0, 0, 0);
 
 # creates filename entry field
-my $fileEntry = Gtk2::Entry->new();
+my $fileEntry = Gtk3::Entry->new();
 $controlHBox->pack_start($fileEntry, 0, 0, 0);
 
 # creates file save button
-my $saveButton = Gtk2::Button->new('_Save');
+my $saveButton = Gtk3::Button->new('_Save');
 $controlHBox->pack_start($saveButton, 0, 0, 0);
 
 # creates main widget
-my $mainWidget = Gtk2::MIDIPlot->new();
+my $mainWidget = Gtk3::MIDIPlot->new();
 $mainVBox->pack_start($mainWidget, 1, 1, 0);
 $saveButton->signal_connect(clicked => sub{midiWrite($mainWidget->getMIDI(), 24, $fileEntry->get_text()) if $fileEntry->get_text() ne ""});
 
 # starts up the GUI
-$window->signal_connect(destroy => sub{Gtk2->main_quit()});
+$window->signal_connect(destroy => sub{Gtk3->main_quit()});
 $window->show_all();
 $mainWidget->get_VBox()->hide();
-Gtk2->main();
+Gtk3->main();
 
 0;
