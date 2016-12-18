@@ -64,11 +64,11 @@ my ($cellWidth, $cellHeight, $numCells, $cellTime, $defaultVol) = (12, 8, 2400, 
 # sets up the class; asks for the signals we need; sets main widget size
 sub new {
   $this = Gtk3::DrawingArea->new();
-  my $topHBox = bless Gtk3::HBox->new();
+  my $topHBox = bless Gtk3::Box->new('horizontal', 6);
   $thisScroll = Gtk3::ScrolledWindow->new();
-  $VBox = Gtk3::VBox->new();
+  $VBox = Gtk3::Box->new('vertical', 6);
   my $volLabel = Gtk3::Label->new('Vol: ');
-  $volSlider = Gtk3::VScale->new_with_range(0, 127, 1);
+  $volSlider = Gtk3::Scale->new_with_range('vertical', 0, 127, 1);
   
   $volSlider->set_inverted(1);
 
@@ -204,15 +204,8 @@ sub button {
         # select a note
         selNote($notes[$x][$y][2], $y);
       } else {
-        # add a note
+        # add a note and refresh
         addNote($x, $y);
-
-        ### # makes new Cairo context to draw a rectangle without causing an entire redraw
-        ### my $thisCairo = Gtk3::Gdk::Cairo::Context->create($this->get_window());
-        ### 
-        ### $thisCairo->rectangle(($notes[$x][$y][2] + 3) * $cellWidth, $ycell * $cellHeight, $notes[$notes[$x][$y][2]][$y][3] * $cellWidth, $cellHeight);
-        ### $thisCairo->fill();
-        
         queue_draw();
         
         $dragMode = 0;
@@ -248,17 +241,10 @@ sub motion {
   my ($xmin, $ymin) = (int($thisScroll->get_hadjustment()->get_value() / $cellWidth) + 3, int($thisScroll->get_vadjustment()->get_value() / $cellHeight) + 2);
   my ($x, $y) = ($xcell - 3, $ycell - 2);
   
-  # check if the underlying cell is set or not and if not, check which mouse button is pressed, then draw and set $notes
+  # check if the underlying cell is set or not and if not, check which mouse button is pressed, then set $notes and refresh
   if ($dragMode == 0) {
     if ($xcell >= $xmin) {
       addNote($x, $dragRow);
-      
-      ### # makes new Cairo context
-      ### my $thisCairo = Gtk3::Gdk::Cairo::Context->create($this->get_window());
-      ### 
-      ### $thisCairo->rectangle(($notes[$x][$dragRow][2] + 3) * $cellWidth, ($dragRow + 2) * $cellHeight, $notes[$notes[$x][$dragRow][2]][$dragRow][3] * $cellWidth, $cellHeight);
-      ### $thisCairo->fill();
-      
       queue_draw();
     }
   }
@@ -387,11 +373,11 @@ my $window = Gtk3::Window->new();
 $window->set_title('SeekMIDI MIDI Sequencer');
 
 # creates VBox for widgets along the top and the main widget area below
-my $mainVBox = Gtk3::VBox->new(0, 6);
+my $mainVBox = Gtk3::Box->new('vertical', 6);
 $window->add($mainVBox);
 
 # creates HBox for widgets along the top
-my $controlHBox = Gtk3::HBox->new(0, 6);
+my $controlHBox = Gtk3::Box->new('horizontal', 6);
 $mainVBox->pack_start($controlHBox, 0, 0, 0);
 
 # creates label for filename entry
