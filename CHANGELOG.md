@@ -1,7 +1,11 @@
 # Change Log
 Notable changes will be documented here. This project strives for [Semantic Versioning](http://semver.org/) adherence and follows the format from [Keep a Changelog](http://keepachangelog.com/).
 
-## [0.2.0] - 2016-10-08
+## [Unreleased]
+### Changed
+- Switch to using GTK+3 instead of GTK+2.
+
+## [0.2.1-alpha] - 2016-10-08
 ### Added
 - Measure markings are provided at the top and throughout the note grid.
 - README now links to the wiki.
@@ -23,5 +27,5 @@ Notable changes will be documented here. This project strives for [Semantic Vers
 ### Added
 - First release. Added the last bit of code for getting the MIDI output from the GUI.
 
-[Unreleased]: https://github.com/oldtechaa/SeekMIDI/compare/v0.2.0-alpha...HEAD
-[0.2.0]: https://github.com/oldtechaa/SeekMIDI/compare/v0.1.0-alpha...v0.2.0-alpha
+[Unreleased]: https://github.com/oldtechaa/SeekMIDI/compare/v0.2.1-alpha...HEAD
+[0.2.1-alpha]: https://github.com/oldtechaa/SeekMIDI/compare/v0.1.0-alpha...v0.2.1-alpha

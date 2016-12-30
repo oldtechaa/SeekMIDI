@@ -357,45 +357,48 @@ use MIDI;
 use Gtk3 -init;
 # use Locale::gettext;
 
-# writes the MIDI output to a file based on the list of events and the filename
+# writes the MIDI output to a file based on the list of events and the filename that the user enters in a FileChooserDialog
 sub midiWrite {
-	my $midiEventsRef = shift;
-	my $midiTicks = shift;
-	my $midiFile = shift;
-	
-	my $midiTrack = MIDI::Track->new({'events' => $midiEventsRef});
-	my $midiPiece = MIDI::Opus->new({'format' => 0, 'ticks' => $midiTicks, 'tracks' => [$midiTrack]});
-	$midiPiece->write_to_file($midiFile);
+  my @dataArr = @{$_[1]};
+  
+	my $midiEventsRef = $dataArr[0];
+	my $midiTicks = $dataArr[1];
+  
+  my $fileDialog = Gtk3::FileChooserDialog->new('Save As', $dataArr[2], 'save', '_Cancel', 'cancel', '_Save', 'ok');
+  
+  if ($fileDialog->run() eq 'ok') {
+    my $midiFile = $fileDialog->get_filename();
+    $fileDialog->destroy();
+
+  	my $midiTrack = MIDI::Track->new({'events' => $midiEventsRef});
+	  my $midiPiece = MIDI::Opus->new({'format' => 0, 'ticks' => $midiTicks, 'tracks' => [$midiTrack]});
+	  $midiPiece->write_to_file($midiFile);
+  } else {
+    $fileDialog->destroy();
+  }
 }
 
 # creates window with title
 my $window = Gtk3::Window->new();
 $window->set_title('SeekMIDI MIDI Sequencer');
 
-# creates VBox for widgets along the top and the main widget area below
-my $mainVBox = Gtk3::Box->new('vertical', 6);
-$window->add($mainVBox);
-
-# creates HBox for widgets along the top
-my $controlHBox = Gtk3::Box->new('horizontal', 6);
-$mainVBox->pack_start($controlHBox, 0, 0, 0);
-
-# creates label for filename entry
-my $fileLabel = Gtk3::Label->new('Output Filename:');
-$controlHBox->pack_start($fileLabel, 0, 0, 0);
-
-# creates filename entry field
-my $fileEntry = Gtk3::Entry->new();
-$controlHBox->pack_start($fileEntry, 0, 0, 0);
+# creates grid for arranging widgets
+my $grid = Gtk3::Grid->new();
+$window->add($grid);
 
 # creates file save button
 my $saveButton = Gtk3::Button->new('_Save');
-$controlHBox->pack_start($saveButton, 0, 0, 0);
+$grid->add($saveButton);
 
 # creates main widget
 my $mainWidget = Gtk3::MIDIPlot->new();
-$mainVBox->pack_start($mainWidget, 1, 1, 0);
-$saveButton->signal_connect(clicked => sub{midiWrite($mainWidget->getMIDI(), 24, $fileEntry->get_text()) if $fileEntry->get_text() ne ""});
+$grid->attach($mainWidget, 0, 1, 4, 1);
+
+$mainWidget->set_hexpand(1);
+$mainWidget->set_vexpand(1);
+
+### $saveButton->signal_connect(clicked => \&midiWrite, [$mainWidget->getMIDI(), 24, $fileEntry->get_text()]);
+$saveButton->signal_connect(clicked => \&midiWrite, [$mainWidget->getMIDI(), 24, $window]);
 
 # starts up the GUI
 $window->signal_connect(destroy => sub{Gtk3->main_quit()});
