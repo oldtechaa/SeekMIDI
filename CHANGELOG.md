@@ -2,6 +2,9 @@
 Notable changes will be documented here. This project strives for [Semantic Versioning](http://semver.org/) adherence and follows the format from [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased]
+### Added
+- Patch change support.
+
 ### Changed
 - Switch to using GTK+3 instead of GTK+2.
 

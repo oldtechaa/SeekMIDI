@@ -27,7 +27,6 @@ package Gtk3::MIDIPlot;
 # invoke dependency modules
 use Gtk3;
 use base 'Gtk3::VBox';
-use Cairo;
 use Pango;
 
 # makes a package-global array that holds note objects, and the global drawing area
@@ -44,16 +43,16 @@ my ($dragRow, $dragStart, $dragMode) = (-1, -1, -1);
 
 # set up black-white key pattern on left sidebar
 my @keys = (0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
-             0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
-             0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
-             0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
-             0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
-             0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
-             0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
-             0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
-             0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
-             0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
-             0, 1, 0, 1, 0, 0, 1, 0);
+            0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
+            0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
+            0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
+            0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
+            0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
+            0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
+            0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
+            0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
+            0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
+            0, 1, 0, 1, 0, 0, 1, 0);
 
 # set up single note selection
 my @selSingle = (-1, -1);
@@ -99,7 +98,7 @@ sub new {
 # refresh handler; handles drawing grid and objects
 # NOTE: $xmin, $ymin refer to grid area coordinates, NOT global drawing area coordinates. 3 cells on the left and 2 on top are taken by sidebar and header
 sub refresh {
-  # makes new Cairo context
+  # gets Cairo context
   my $thisCairo = $_[1];
 
   # sets drawing color for main grid
@@ -297,21 +296,21 @@ sub volChanged {
 sub getMIDI {
   my @events;
 
-  push(@events, ['patch_change', 0, 0, 0]);
+  push (@events, ['patch_change', 0, 0, $_[1]]);
 
   for (0 .. 127) {
     if (is_Enabled(0, $_)) {
-      push(@events, ['note_on', 0, 0, 127 - $_, $notes[0][$_][4]]);
+      push (@events, ['note_on', 0, 0, 127 - $_, $notes[0][$_][4]]);
     }
   }
   my $delta = $cellTime;
   for my $incx (1 .. $numCells) {
     for my $incy (0 .. 127) {
       if (!is_Enabled($incx, $incy) && is_Enabled($incx - 1, $incy)) {
-        push(@events, ['note_off', $delta, 0, 127 - $incy, $notes[$notes[$incx - 1][$incy][2]][$incy][4]]);
+        push (@events, ['note_off', $delta, 0, 127 - $incy, $notes[$notes[$incx - 1][$incy][2]][$incy][4]]);
         $delta = 0;
       } elsif (is_Enabled($incx, $incy) && !is_Enabled($incx - 1, $incy)) {
-        push(@events, ['note_on', $delta, 0, 127 - $incy, $notes[$incx][$incy][4]]);
+        push (@events, ['note_on', $delta, 0, 127 - $incy, $notes[$incx][$incy][4]]);
         $delta = 0;
       }
     }
@@ -361,10 +360,11 @@ use Gtk3 -init;
 sub midiWrite {
   my @dataArr = @{$_[1]};
   
-	my $midiEventsRef = $dataArr[0];
-	my $midiTicks = $dataArr[1];
+  my $mainWidget = $dataArr[0];
+	my $midiEventsRef = $mainWidget->getMIDI($dataArr[1]->get_active());
+	my $midiTicks = $dataArr[2];
   
-  my $fileDialog = Gtk3::FileChooserDialog->new('Save As', $dataArr[2], 'save', '_Cancel', 'cancel', '_Save', 'ok');
+  my $fileDialog = Gtk3::FileChooserDialog->new('Save As', $dataArr[3], 'save', '_Cancel', 'cancel', '_Save', 'ok');
   
   if ($fileDialog->run() eq 'ok') {
     my $midiFile = $fileDialog->get_filename();
@@ -376,6 +376,152 @@ sub midiWrite {
   } else {
     $fileDialog->destroy();
   }
+}
+
+# insert entries into the patch list and space properly for vertical alignment
+sub patchPopulate {
+  my @patches = ('Grand Piano',
+                 'Bright Acoustic Piano',
+                 'Electric Grand Piano',
+                 'Honky-Tonk Piano',
+                 'Electric Piano 1',
+                 'Electric Piano 2',
+                 'Harpsichord',
+                 'Clavinet',
+                 'Celesta',
+                 'Glockenspiel',
+                 'Music Box',
+                 'Vibraphone',
+                 'Marimba',
+                 'Xylophone',
+                 'Tubular Bells',
+                 'Dulcimer',
+                 'Drawbar Organ',
+                 'Percussive Organ',
+                 'Rock Organ',
+                 'Church Organ',
+                 'Reed Organ',
+                 'Accordion',
+                 'Harmonica',
+                 'Tango Accordion',
+                 'Acoustic Guitar (Nylon)',
+                 'Acoustic Guitar (Steel)',
+                 'Electric Guitar (Jazz)',
+                 'Electric Guitar (Clean)',
+                 'Electric Guitar (Muted)',
+                 'Overdriven Guitar',
+                 'Distortion Guitar',
+                 'Guitar Harmonics',
+                 'Acoustic Bass',
+                 'Electric Bass (Finger)',
+                 'Electric Bass (Pick)',
+                 'Fretless Bass',
+                 'Slap Bass 1',
+                 'Slap Bass 2',
+                 'Synth Bass 1',
+                 'Synth Bass 2',
+                 'Violin',
+                 'Viola',
+                 'Cello',
+                 'Contrabass',
+                 'Tremolo Strings',
+                 'Pizzicato Strings',
+                 'Orchestral Harp',
+                 'Timpani',
+                 'String Ensemble 1',
+                 'String Ensemble 2',
+                 'Synth Strings 1',
+                 'Synth Strings 2',
+                 'Choir Aahs',
+                 'Voice Oohs',
+                 'Synth Choir',
+                 'Orchestra Hit',
+                 'Trumpet',
+                 'Trombone',
+                 'Tuba',
+                 'Muted Trumpet',
+                 'French Horn',
+                 'Brass Section',
+                 'Synth Brass 1',
+                 'Synth Brass 2',
+                 'Soprano Sax',
+                 'Alto Sax',
+                 'Tenor Sax',
+                 'Baritone Sax',
+                 'Oboe',
+                 'English Horn',
+                 'Bassoon',
+                 'Clarinet',
+                 'Piccolo',
+                 'Flute',
+                 'Recorder',
+                 'Pan Flute',
+                 'Blown Bottle',
+                 'Shakuhachi',
+                 'Whistle',
+                 'Ocarina',
+                 'Lead 1 (Square)',
+                 'Lead 2 (Sawtooth)',
+                 'Lead 3 (Calliope)',
+                 'Lead 4 (Chiff)',
+                 'Lead 5 (Charang)',
+                 'Lead 6 (Voice)',
+                 'Lead 7 (Fifths)',
+                 'Lead 8 (Bass + Lead)',
+                 'Pad 1 (New Age)',
+                 'Pad 2 (Warm)',
+                 'Pad 3 (Polysynth)',
+                 'Pad 4 (Choir)',
+                 'Pad 5 (Bowed)',
+                 'Pad 6 (Metallic)',
+                 'Pad 7 (Halo)',
+                 'Pad 8 (Sweep)',
+                 'Rain FX 1',
+                 'Soundtrack FX 2',
+                 'Crystal FX 3',
+                 'Atmosphere FX 4',
+                 'Brightness FX 5',
+                 'Goblins FX 6',
+                 'Echoes FX 7',
+                 'Sci-Fi FX 8',
+                 'Sitar',
+                 'Banjo',
+                 'Shamisen',
+                 'Koto',
+                 'Kalimba',
+                 'Bagpipe',
+                 'Fiddle',
+                 'Shanai',
+                 'Tinkle Bell',
+                 'Agogo',
+                 'Steel Drums',
+                 'Woodblock',
+                 'Taiko Drum',
+                 'Melodic Tom',
+                 'Synth Drum',
+                 'Reverse Cymbal',
+                 'Guitar Fret Noise',
+                 'Breath Noise',
+                 'Seashore',
+                 'Bird Tweet',
+                 'Telephone Ring',
+                 'Helicopter',
+                 'Applause',
+                 'Gunshot');
+  my $fillSpaces;
+  
+  for (1 .. 128) {
+    if ($_ < 10) {
+      $fillSpaces = '   - ';
+    } elsif ($_ < 100) {
+      $fillSpaces = '  - ';
+    } else {
+      $fillSpaces = ' - ';
+    }
+    $_[0]->append_text($_ . $fillSpaces . $patches[$_ - 1]);
+  }
+  
+  $_[0]->set_active(0);
 }
 
 # creates window with title
@@ -390,15 +536,21 @@ $window->add($grid);
 my $saveButton = Gtk3::Button->new('_Save');
 $grid->add($saveButton);
 
+# creates patch list combo box
+my $patchCombo = Gtk3::ComboBoxText->new();
+$grid->add($patchCombo);
+patchPopulate($patchCombo);
+
 # creates main widget
 my $mainWidget = Gtk3::MIDIPlot->new();
 $grid->attach($mainWidget, 0, 1, 4, 1);
 
+# make the main widget fill available space
 $mainWidget->set_hexpand(1);
 $mainWidget->set_vexpand(1);
 
-### $saveButton->signal_connect(clicked => \&midiWrite, [$mainWidget->getMIDI(), 24, $fileEntry->get_text()]);
-$saveButton->signal_connect(clicked => \&midiWrite, [$mainWidget->getMIDI(), 24, $window]);
+# connect save button
+$saveButton->signal_connect(clicked => \&midiWrite, [$mainWidget, $patchCombo, 24, $window]);
 
 # starts up the GUI
 $window->signal_connect(destroy => sub{Gtk3->main_quit()});
