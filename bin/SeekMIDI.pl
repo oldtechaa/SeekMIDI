@@ -356,6 +356,9 @@ use MIDI;
 use Gtk3 -init;
 # use Locale::gettext;
 
+use Glib::Object::Introspection;
+Glib::Object::Introspection->setup(basename => 'Gio', version => '2.0', package => 'Glib::IO');
+
 # writes the MIDI output to a file based on the list of events and the filename that the user enters in a FileChooserDialog
 sub midiWrite {
   my @dataArr = @{$_[1]};
@@ -524,38 +527,43 @@ sub patchPopulate {
   $_[0]->set_active(0);
 }
 
-# creates window with title
-my $window = Gtk3::Window->new();
-$window->set_title('SeekMIDI MIDI Sequencer');
+# builds UI
+sub app_build {
+  # creates window with title
+  my $window = Gtk3::ApplicationWindow->new($_[0]);
+  $window->set_title('SeekMIDI MIDI Sequencer');
+  
+  # creates grid for arranging widgets
+  my $grid = Gtk3::Grid->new();
+  $window->add($grid);
+  
+  # creates file save button
+  my $saveButton = Gtk3::Button->new('_Save');
+  $grid->add($saveButton);
+  
+  # creates patch list combo box
+  my $patchCombo = Gtk3::ComboBoxText->new();
+  $grid->add($patchCombo);
+  patchPopulate($patchCombo);
+  
+  # creates main widget
+  my $mainWidget = Gtk3::MIDIPlot->new();
+  $grid->attach($mainWidget, 0, 1, 4, 1);
+  
+  # make the main widget fill available space
+  $mainWidget->set_hexpand(1);
+  $mainWidget->set_vexpand(1);
+  
+  # connect save button
+  $saveButton->signal_connect('clicked' => \&midiWrite, [$mainWidget, $patchCombo, 24, $window]);
 
-# creates grid for arranging widgets
-my $grid = Gtk3::Grid->new();
-$window->add($grid);
+  $window->show_all();
+  $mainWidget->get_VBox()->hide();
+}
 
-# creates file save button
-my $saveButton = Gtk3::Button->new('_Save');
-$grid->add($saveButton);
+my $app = Gtk3::Application->new('com.oldtechaa.seekmidi', 'flags-none');
 
-# creates patch list combo box
-my $patchCombo = Gtk3::ComboBoxText->new();
-$grid->add($patchCombo);
-patchPopulate($patchCombo);
-
-# creates main widget
-my $mainWidget = Gtk3::MIDIPlot->new();
-$grid->attach($mainWidget, 0, 1, 4, 1);
-
-# make the main widget fill available space
-$mainWidget->set_hexpand(1);
-$mainWidget->set_vexpand(1);
-
-# connect save button
-$saveButton->signal_connect(clicked => \&midiWrite, [$mainWidget, $patchCombo, 24, $window]);
-
-# starts up the GUI
-$window->signal_connect(destroy => sub{Gtk3->main_quit()});
-$window->show_all();
-$mainWidget->get_VBox()->hide();
-Gtk3->main();
+$app->signal_connect('activate' => \&app_build);
+$app->run();
 
 0;
