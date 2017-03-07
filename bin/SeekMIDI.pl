@@ -18,8 +18,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # ALWAYS MAINTAIN NO WARNINGS AND NO ERRORS!
-use strict;
 use warnings;
+use strict;
 
 # custom widget class; separate from main package below
 package Gtk3::MIDIPlot;
@@ -353,7 +353,7 @@ use File::Spec;
 use lib File::Spec->catdir($FindBin::Bin, '../lib');
 
 use MIDI;
-use Gtk3 -init;
+use Gtk3;
 # use Locale::gettext;
 
 use Glib::Object::Introspection;
@@ -529,26 +529,25 @@ sub patchPopulate {
 
 # builds UI
 sub app_build {
-  # creates window with title
-  my $window = Gtk3::ApplicationWindow->new($_[0]);
-  $window->set_title('SeekMIDI MIDI Sequencer');
+  my ($app) = @_;
   
-  # creates grid for arranging widgets
-  my $grid = Gtk3::Grid->new();
-  $window->add($grid);
+  # create Builder from UI file
+  my $builder = Gtk3::Builder->new_from_file('../SeekMIDI.ui');
   
-  # creates file save button
-  my $saveButton = Gtk3::Button->new('_Save');
-  $grid->add($saveButton);
+  # get window and connect it to our app
+  my $window = $builder->get_object('window');
+  $window->set_application($app);
   
-  # creates patch list combo box
-  my $patchCombo = Gtk3::ComboBoxText->new();
-  $grid->add($patchCombo);
+  # get the other widgets we need
+  my $grid = $builder->get_object('grid');
+  my $patchCombo = $builder->get_object('patchCombo');
+  
+  # add the patch choices to the combo box
   patchPopulate($patchCombo);
   
   # creates main widget
   my $mainWidget = Gtk3::MIDIPlot->new();
-  $grid->attach($mainWidget, 0, 1, 4, 1);
+  $grid->attach($mainWidget, 0, 2, 4, 1);
   
   # make the main widget fill available space
   $mainWidget->set_hexpand(1);
@@ -556,6 +555,9 @@ sub app_build {
   
   # connect save button
   $saveButton->signal_connect('clicked' => \&midiWrite, [$mainWidget, $patchCombo, 24, $window]);
+
+  # allow for window delete
+  $window->signal_connect('delete_event' => sub{$app->quit()});
 
   $window->show_all();
   $mainWidget->get_VBox()->hide();
