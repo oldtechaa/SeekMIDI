@@ -79,16 +79,16 @@ sub new {
   $VBox->pack_start($volLabel, 0, 0, 0);
   $VBox->pack_start($volSlider, 1, 1, 0);
 
-  $this->signal_connect(draw => 'Gtk3::MIDIPlot::refresh');
-  $this->signal_connect(button_press_event => 'Gtk3::MIDIPlot::button');
-  $this->signal_connect(motion_notify_event => 'Gtk3::MIDIPlot::motion');
-  $this->signal_connect(button_release_event => 'Gtk3::MIDIPlot::release');
-  $this->signal_connect(realize => 'Gtk3::MIDIPlot::set_mouse_events');
+  $this->signal_connect('draw' => 'Gtk3::MIDIPlot::refresh');
+  $this->signal_connect('button_press_event' => 'Gtk3::MIDIPlot::button');
+  $this->signal_connect('motion_notify_event' => 'Gtk3::MIDIPlot::motion');
+  $this->signal_connect('button_release_event' => 'Gtk3::MIDIPlot::release');
+  $this->signal_connect('realize' => 'Gtk3::MIDIPlot::set_mouse_events');
   
-  $thisScroll->get_hadjustment->signal_connect(value_changed => 'Gtk3::MIDIPlot::queue_draw');
-  $thisScroll->get_vadjustment->signal_connect(value_changed => 'Gtk3::MIDIPlot::queue_draw');
+  $thisScroll->get_hadjustment->signal_connect('value_changed' => 'Gtk3::MIDIPlot::queue_draw');
+  $thisScroll->get_vadjustment->signal_connect('value_changed' => 'Gtk3::MIDIPlot::queue_draw');
   
-  $volSlider->get_adjustment->signal_connect(value_changed => 'Gtk3::MIDIPlot::volChanged');
+  $volSlider->get_adjustment->signal_connect('value_changed' => 'Gtk3::MIDIPlot::volChanged');
 
   $this->set_size_request(($numCells + 3) * $cellWidth, 130 * $cellHeight);
 
@@ -328,7 +328,7 @@ sub get_VBox {
 # tells us whether a cell contains (part of) a note
 sub is_Enabled {
   my ($x, $y) = @_;
-  if ($notes[$x][$y][0] && $notes[$x][$y][0] == 1) {
+  if ($notes[$x][$y][0]) {
     return 1;
   } else {
     return 0;
@@ -357,11 +357,11 @@ use Gtk3;
 # use Locale::gettext;
 
 use Glib::Object::Introspection;
-Glib::Object::Introspection->setup(basename => 'Gio', version => '2.0', package => 'Glib::IO');
+Glib::Object::Introspection->setup('basename' => 'Gio', 'version' => '2.0', 'package' => 'Glib::IO');
 
 # writes the MIDI output to a file based on the list of events and the filename that the user enters in a FileChooserDialog
 sub midiWrite {
-  my @dataArr = @{$_[1]};
+  my @dataArr = @{$_[2]};
   
   my $mainWidget = $dataArr[0];
 	my $midiEventsRef = $mainWidget->getMIDI($dataArr[1]->get_active());
@@ -552,9 +552,14 @@ sub app_build {
   # make the main widget fill available space
   $mainWidget->set_hexpand(1);
   $mainWidget->set_vexpand(1);
+
+  my $saveAsAction = Glib::IO::SimpleAction->new('saveas', undef);
+  $saveAsAction->signal_connect('activate' => \&midiWrite, [$mainWidget, $patchCombo, 24, $window]);
+  $window->add_action($saveAsAction);
   
-  # connect save button
-  $saveButton->signal_connect('clicked' => \&midiWrite, [$mainWidget, $patchCombo, 24, $window]);
+  my $quitAction = Glib::IO::SimpleAction->new('quit', undef);
+  $quitAction->signal_connect('activate' => sub{$app->quit()});
+  $app->add_action($quitAction);
 
   # allow for window delete
   $window->signal_connect('delete_event' => sub{$app->quit()});
