@@ -36,7 +36,7 @@ my @notes;
 my $this;
 my $thisScroll;
 my $volSlider;
-my $VBox;
+my $volReveal;
 
 # initialize the drag variables to a no-drag state
 my ($dragRow, $dragStart, $dragMode) = (-1, -1, -1);
@@ -65,19 +65,22 @@ sub new {
   $this = Gtk3::DrawingArea->new();
   my $topHBox = bless Gtk3::Box->new('horizontal', 6);
   $thisScroll = Gtk3::ScrolledWindow->new();
-  $VBox = Gtk3::Box->new('vertical', 6);
+  my $VBox = Gtk3::Box->new('vertical', 6);
   my $volLabel = Gtk3::Label->new('Vol: ');
   $volSlider = Gtk3::Scale->new_with_range('vertical', 0, 127, 1);
+  $volReveal = Gtk3::Revealer->new();
+  $volReveal->set_transition_type('slide_right');
   
   $volSlider->set_inverted(1);
 
   $topHBox->pack_start($thisScroll, 1, 1, 0);
-  $topHBox->pack_start($VBox, 0, 0, 0);
+  $topHBox->pack_start($volReveal, 0, 0, 0);
 
   $thisScroll->add_with_viewport($this);
 
   $VBox->pack_start($volLabel, 0, 0, 0);
   $VBox->pack_start($volSlider, 1, 1, 0);
+  $volReveal->add($VBox);
 
   $this->signal_connect('draw' => 'Gtk3::MIDIPlot::refresh');
   $this->signal_connect('button_press_event' => 'Gtk3::MIDIPlot::button');
@@ -226,7 +229,7 @@ sub button {
         @selSingle = (-1, -1);
       }
       # hide volume slider
-      $VBox->hide();
+      $volReveal->set_reveal_child(0);
       queue_draw();
     }
   }
@@ -280,7 +283,7 @@ sub selNote {
 	@selSingle = ($x, $y);
 	
   # show volume slider for selected note
-  $VBox->show();
+  $volReveal->set_reveal_child(1);
   if (!$notes[$notes[$x][$y][2]][$y][4]) {
     $notes[$notes[$x][$y][2]][$y][4] = $defaultVol;
   }
@@ -321,8 +324,8 @@ sub getMIDI {
 }
 
 # makes it so we can get the VBox from outside the package
-sub get_VBox {
-  return $VBox;
+sub get_volReveal {
+  return $volReveal;
 }
 
 # tells us whether a cell contains (part of) a note
@@ -565,7 +568,7 @@ sub app_build {
   $window->signal_connect('delete_event' => sub{$app->quit()});
 
   $window->show_all();
-  $mainWidget->get_VBox()->hide();
+  $mainWidget->get_volReveal()->set_reveal_child(0);
 }
 
 my $app = Gtk3::Application->new('com.oldtechaa.seekmidi', 'flags-none');
