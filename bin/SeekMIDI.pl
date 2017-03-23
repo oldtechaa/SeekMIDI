@@ -69,7 +69,6 @@ sub new {
   my $volLabel = Gtk3::Label->new('Vol: ');
   $volSlider = Gtk3::Scale->new_with_range('vertical', 0, 127, 1);
   $volReveal = Gtk3::Revealer->new();
-  $volReveal->set_transition_type('slide_right');
   
   $volSlider->set_inverted(1);
 
@@ -81,6 +80,7 @@ sub new {
   $VBox->pack_start($volLabel, 0, 0, 0);
   $VBox->pack_start($volSlider, 1, 1, 0);
   $volReveal->add($VBox);
+  $volReveal->set_transition_type('slide_right');
 
   $this->signal_connect('draw' => 'Gtk3::MIDIPlot::refresh');
   $this->signal_connect('button_press_event' => 'Gtk3::MIDIPlot::button');
@@ -108,7 +108,7 @@ sub refresh {
   $thisCairo->set_source_rgb(0.75, 0.75, 0.75);
 
   # get the current scroll positions and size of the window, then convert to grid-blocks, adjusting to draw surrounding blocks also, and make sure we don't go out of bounds
-  my ($xmin, $ymin, $width, $height) = (int($thisScroll->get_hadjustment()->get_value() / $cellWidth) + 3, int($thisScroll->get_vadjustment()->get_value() / $cellHeight) + 2, $thisScroll->get_hadjustment()->get_page_size() - ($cellWidth * 3), $thisScroll->get_vadjustment()->get_page_size() - ($cellHeight * 2));
+  my ($xmin, $ymin, $width, $height) = (int($thisScroll->get_hadjustment()->get_value() / $cellWidth) + 3, int($thisScroll->get_vadjustment()->get_value() / $cellHeight) + 2, ($thisCairo->clip_extents())[2] - ($cellWidth * 3), ($thisCairo->clip_extents())[3] - ($cellHeight * 2));
   my $xmax = ($xmin + (int($width / $cellWidth) + 2));
   my $ymax = ($ymin + (int($height / $cellHeight) + 2));
   $xmax = $numCells + 3 if $xmax > $numCells + 3;
@@ -230,6 +230,7 @@ sub button {
       }
       # hide volume slider
       $volReveal->set_reveal_child(0);
+      $volReveal->hide();
       queue_draw();
     }
   }
@@ -283,6 +284,7 @@ sub selNote {
 	@selSingle = ($x, $y);
 	
   # show volume slider for selected note
+  $volReveal->show();
   $volReveal->set_reveal_child(1);
   if (!$notes[$notes[$x][$y][2]][$y][4]) {
     $notes[$notes[$x][$y][2]][$y][4] = $defaultVol;
@@ -350,7 +352,7 @@ sub set_mouse_events {
 
 package main;
 
-# append to @INC the script dir's subdir 'lib' for MIDI.pm
+# append to @INC the corresponding library directory for MIDI.pm
 use FindBin;
 use File::Spec;
 use lib File::Spec->catdir($FindBin::Bin, '../lib');
@@ -569,6 +571,7 @@ sub app_build {
 
   $window->show_all();
   $mainWidget->get_volReveal()->set_reveal_child(0);
+  $mainWidget->get_volReveal()->hide();
 }
 
 my $app = Gtk3::Application->new('com.oldtechaa.seekmidi', 'flags-none');
