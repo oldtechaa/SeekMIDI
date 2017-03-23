@@ -108,11 +108,7 @@ sub refresh {
   $thisCairo->set_source_rgb(0.75, 0.75, 0.75);
 
   # get the current scroll positions and size of the window, then convert to grid-blocks, adjusting to draw surrounding blocks also, and make sure we don't go out of bounds
-  my ($xmin, $ymin, $width, $height) = (int($thisScroll->get_hadjustment()->get_value() / $cellWidth) + 3, int($thisScroll->get_vadjustment()->get_value() / $cellHeight) + 2, ($thisCairo->clip_extents())[2] - ($cellWidth * 3), ($thisCairo->clip_extents())[3] - ($cellHeight * 2));
-  my $xmax = ($xmin + (int($width / $cellWidth) + 2));
-  my $ymax = ($ymin + (int($height / $cellHeight) + 2));
-  $xmax = $numCells + 3 if $xmax > $numCells + 3;
-  $ymax = 130 if $ymax > 130;
+  my ($xmin, $ymin, $xmax, $ymax) = (int(($thisCairo->clip_extents())[0] / $cellWidth) + 3, int(($thisCairo->clip_extents())[1] / $cellHeight) + 2, int(($thisCairo->clip_extents())[2] / $cellWidth), int(($thisCairo->clip_extents())[3] / $cellHeight));
 
   # these two loops create the background grid
   my $inc;
