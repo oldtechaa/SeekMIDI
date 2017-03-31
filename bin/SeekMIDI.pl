@@ -135,13 +135,13 @@ sub refresh {
     # draw time header and darker lines on time divisions
     for ($xmin - 3 .. $xmax - 3) {
         if ($_ % (96 / $cellTime) == 0) {
-        $thisCairo->move_to(($_ + 3) * $cellWidth, $ymin * $cellHeight);
-        $thisCairo->line_to(($_ + 3) * $cellWidth, $ymax * $cellHeight);
+            $thisCairo->move_to(($_ + 3) * $cellWidth, $ymin * $cellHeight);
+            $thisCairo->line_to(($_ + 3) * $cellWidth, $ymax * $cellHeight);
       
-        $thisPango->set_text($_ / (96 / $cellTime));
-        my ($PangoWidth, $PangoHeight) = $thisPango->get_size();
-        $thisCairo->move_to($_ * $cellWidth - $PangoWidth / Pango->scale() / 2 + 3 * $cellWidth, $ymin * $cellHeight - ($cellHeight * 1.5));
-        Pango::Cairo::show_layout($thisCairo, $thisPango);
+            $thisPango->set_text($_ / (96 / $cellTime));
+            my ($PangoWidth, $PangoHeight) = $thisPango->get_size();
+            $thisCairo->move_to($_ * $cellWidth - $PangoWidth / Pango->scale() / 2 + 3 * $cellWidth, $ymin * $cellHeight - ($cellHeight * 1.5));
+            Pango::Cairo::show_layout($thisCairo, $thisPango);
         }
     }
   
@@ -198,18 +198,18 @@ sub button {
     # left mouse button
     if ($event->button == 1) {
         if ($xcell >= $xmin && $ycell >= $ymin) {
-        if (is_Enabled($x, $y)) {
-            # select a note
-            selNote($notes[$x][$y][2], $y);
-        } else {
-            # add a note and refresh
-            addNote($x, $y);
-            $this->queue_draw();
+            if (is_Enabled($x, $y)) {
+                # select a note
+                selNote($notes[$x][$y][2], $y);
+            } else {
+                # add a note and refresh
+                addNote($x, $y);
+                $this->queue_draw();
             
-            $dragMode = 0;
-            $dragRow = $y;
+                $dragMode = 0;
+                $dragRow = $y;
+            }
         }
-    }
     # right mouse button
     } elsif ($event->button == 3) {
         if ($xcell >= $xmin && $ycell >= $ymin) {
@@ -267,7 +267,7 @@ sub addNote {
             @{$notes[$_][$y]}[1 .. 2] = (1, $notes[$x][$y][2]);
         } else {
             $notes[$notes[$x][$y][2]][$y][3] = $_  - $notes[$x][$y][2];
-        last;
+            last;
         }
     }
   
