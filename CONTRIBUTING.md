@@ -18,13 +18,13 @@ Follow [these directions](https://help.github.com/articles/cloning-a-repository/
 
 Here are some guidelines on coding style for changes:
 
- * Use two space indentation. Not tabs.
+ * Follow [perlstyle](https://perldoc.perl.org/perlstyle.html). This trumps anything written here.
 
  * Functions should be called in this style: $foo->bar()
 
  * Keywords and built-ins should be called in this style: for ()
 
- * Properties of a class should not use parentheses, like this: $foo->bar
+ * Properties of an object should not use parentheses, like this: $foo->bar
 
  * Use perlish fors when possible, declaring the count variable before the opening parentheses. C-style loops should generally be avoided.
 
@@ -33,7 +33,7 @@ Here are some guidelines on coding style for changes:
  * Use single quotes when not including variables to be escaped, double quotes if including escaped variables.
 
  * Comment your code as you add major new features.
-
+ 
  * For anything not mentioned here, take a look at the existing code for examples of how to format things.
 
 ### Submitting Pull Requests ###

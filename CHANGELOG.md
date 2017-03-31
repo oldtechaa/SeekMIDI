@@ -1,5 +1,5 @@
 # Change Log
-Notable changes will be documented here. This project strives for [Semantic Versioning](http://semver.org/) adherence and follows the format from [Keep a Changelog](http://keepachangelog.com/).
+Notable changes will be documented here. This changelog follows the format from [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased]
 ### Added
@@ -7,6 +7,11 @@ Notable changes will be documented here. This project strives for [Semantic Vers
 
 ### Changed
 - Switch to using GTK+3 instead of GTK+2.
+- Save command has been moved into menus instead of a button in the main interface.
+- Save command uses native GTK+ save dialog instead of file entry.
+
+### Fixed
+- Bug fix for issue #30, main widget now draws fully to the edges of the widget area.
 
 ## [0.2.1-alpha] - 2016-10-08
 ### Added
@@ -26,7 +31,7 @@ Notable changes will be documented here. This project strives for [Semantic Vers
 - No longer rely on installation of MIDI-Perl. It is now included in the source directory under lib/.
 - SeekMIDI.pl can now be found in the bin/ directory.
 
-## 0.01 - 2016-03-25
+## 0.1.0-alpha - 2016-03-25
 ### Added
 - First release. Added the last bit of code for getting the MIDI output from the GUI.
 
