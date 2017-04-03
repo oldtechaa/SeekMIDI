@@ -21,6 +21,9 @@
 use warnings;
 use strict;
 
+my $FALSE = 0;
+my $TRUE  = 1;
+
 # custom widget class; separate from main package below
 package Gtk3::MIDIPlot;
 
@@ -29,17 +32,11 @@ use Gtk3;
 use base 'Gtk3::VBox';
 use Pango;
 
-# makes a package-global array that holds note objects, and the global drawing area
-my @notes;
-
-# set up package-global variables for widgets that need to be accessed throughout the package
-my $this;
-my $thisScroll;
-my $volSlider;
-my $volReveal;
-
-# initialize the drag variables to a no-drag state
-my ($dragRow, $dragStart, $dragMode) = (-1, -1, -1);
+my $NOTE_ENABLED   = 0;
+my $NOTE_CONTINUED = 1;
+my $NOTE_START     = 2;
+my $NOTE_LENGTH    = 3;
+my $NOTE_VOLUME    = 4;
 
 # set up black-white key pattern on left sidebar
 my @keys = (0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
@@ -53,6 +50,18 @@ my @keys = (0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
             0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
             0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
             0, 1, 0, 1, 0, 0, 1, 0);
+
+# makes a package-global array that holds note objects, and the global drawing area
+my @notes;
+
+# set up package-global variables for widgets that need to be accessed throughout the package
+my $this;
+my $thisScroll;
+my $volSlider;
+my $volReveal;
+
+# initialize the drag variables to a no-drag state
+my ($dragRow, $dragStart, $dragMode) = (-1, -1, -1);
 
 # set up single note selection
 my @selSingle = (-1, -1);
@@ -72,13 +81,13 @@ sub new {
 
     $volSlider->set_inverted(1);
 
-    $topHBox->pack_start($thisScroll, 1, 1, 0);
-    $topHBox->pack_start($volReveal, 0, 0, 0);
+    $topHBox->pack_start($thisScroll, $TRUE, $TRUE, 0);
+    $topHBox->pack_start($volReveal, $FALSE, $FALSE, 0);
 
     $thisScroll->add_with_viewport($this);
 
-    $VBox->pack_start($volLabel, 0, 0, 0);
-    $VBox->pack_start($volSlider, 1, 1, 0);
+    $VBox->pack_start($volLabel, $FALSE, $FALSE, 0);
+    $VBox->pack_start($volSlider, $TRUE, $TRUE, 0);
     $volReveal->add($VBox);
     $volReveal->set_transition_type('slide_right');
 
@@ -86,7 +95,7 @@ sub new {
     $this->signal_connect('button_press_event' => 'Gtk3::MIDIPlot::button');
     $this->signal_connect('motion_notify_event' => 'Gtk3::MIDIPlot::motion');
     $this->signal_connect('button_release_event' => 'Gtk3::MIDIPlot::release');
-    $this->signal_connect('realize' => 'Gtk3::MIDIPlot::set_mouse_events');
+    $this->signal_connect('realize' => sub{$this->get_window()->set_events(['button-press-mask', 'button-motion-mask', 'button-release-mask'])});
 
     $thisScroll->get_hadjustment->signal_connect('value_changed' => sub {$this->queue_draw()});
     $thisScroll->get_vadjustment->signal_connect('value_changed' => sub {$this->queue_draw()});
@@ -161,7 +170,7 @@ sub refresh {
     # create the piano key sidebar
     $thisCairo->set_source_rgb(0, 0, 0);
     for ($ymin .. $ymax - 1) {
-        if ($keys[127 - ($_ - 2)] == 1) {
+        if ($keys[127 - ($_ - 2)] == $TRUE) {
             $thisCairo->rectangle(($xmin - 3) * $cellWidth, $_ * $cellHeight + 1, ($cellWidth * 3) * 0.8, $cellHeight * 0.75);
         }
     }
@@ -169,14 +178,14 @@ sub refresh {
     # this checks for events with their state set to true, then draws them, scanning the leftmost column first, then all others
     for ($ymin .. $ymax - 1) {
         if (is_Enabled($xmin - 3, $_ - 2)) {
-            my $startNote = $notes[$xmin - 3][$_ - 2][2];
-            $thisCairo->rectangle($xmin * $cellWidth, $_ * $cellHeight, ($notes[$startNote][$_ - 2][3] - (($xmin - 3) - $startNote)) * $cellWidth, $cellHeight);
+            my $startNote = $notes[$xmin - 3][$_ - 2][$NOTE_START];
+            $thisCairo->rectangle($xmin * $cellWidth, $_ * $cellHeight, ($notes[$startNote][$_ - 2][$NOTE_LENGTH] - (($xmin - 3) - $startNote)) * $cellWidth, $cellHeight);
         }
     }
     for my $incx ($xmin + 1 .. $xmax - 1) {
         for my $incy ($ymin .. $ymax - 1) {
-            if (is_Enabled($incx - 3, $incy - 2) && $notes[$incx - 3][$incy - 2][1] == 0) {
-                $thisCairo->rectangle($incx * $cellWidth, $incy * $cellHeight, $notes[$incx - 3][$incy - 2][3] * $cellWidth, $cellHeight);
+            if (is_Enabled($incx - 3, $incy - 2) && $notes[$incx - 3][$incy - 2][$NOTE_CONTINUED] == $FALSE) {
+                $thisCairo->rectangle($incx * $cellWidth, $incy * $cellHeight, $notes[$incx - 3][$incy - 2][$NOTE_LENGTH] * $cellWidth, $cellHeight);
             }
         }
     }
@@ -200,7 +209,7 @@ sub button {
         if ($xcell >= $xmin && $ycell >= $ymin) {
             if (is_Enabled($x, $y)) {
                 # select a note
-                selNote($notes[$x][$y][2], $y);
+                selNote($notes[$x][$y][$NOTE_START], $y);
             } else {
                 # add a note and refresh
                 addNote($x, $y);
@@ -215,17 +224,17 @@ sub button {
         if ($xcell >= $xmin && $ycell >= $ymin) {
             if (is_Enabled($x, $y)) {
                 # remove the note
-                @selSingle = (-1, -1) if @selSingle = ($notes[$x][$y][2], $y);
+                @selSingle = (-1, -1) if @selSingle = ($notes[$x][$y][$NOTE_START], $y);
 
-                for ($notes[$x][$y][2] .. $notes[$x][$y][2] + $notes[$notes[$x][$y][2]][$y][3] - 1) {
-                    $notes[$_][$y][0] = 0;
+                for ($notes[$x][$y][$NOTE_START] .. $notes[$x][$y][$NOTE_START] + $notes[$notes[$x][$y][$NOTE_START]][$y][$NOTE_LENGTH] - 1) {
+                    $notes[$_][$y][$NOTE_ENABLED] = $FALSE;
                 }
             } else {
                 # turn off selection
                 @selSingle = (-1, -1);
             }
             # hide volume slider
-            $volReveal->set_reveal_child(0);
+            $volReveal->set_reveal_child($FALSE);
             $volReveal->hide();
             $this->queue_draw();
         }
@@ -258,20 +267,20 @@ sub release {
 sub addNote {
     my ($x, $y) = @_;
 
-    @{$notes[$x][$y]}[0 .. 2] = (1, 0, $x);
+    @{$notes[$x][$y]}[$NOTE_ENABLED, $NOTE_CONTINUED, $NOTE_START] = ($TRUE, $FALSE, $x);
     if (is_Enabled($x - 1, $y)) {
-        @{$notes[$x][$y]}[1 .. 2] = (1, $notes[$x - 1][$y][2]);
+        @{$notes[$x][$y]}[$NOTE_CONTINUED, $NOTE_START] = ($TRUE, $notes[$x - 1][$y][$NOTE_START]);
     }
-    for ($notes[$x][$y][2] + 1 .. $numCells) {
+    for ($notes[$x][$y][$NOTE_START] + 1 .. $numCells) {
         if (is_Enabled($_, $y)) {
-            @{$notes[$_][$y]}[1 .. 2] = (1, $notes[$x][$y][2]);
+            @{$notes[$_][$y]}[$NOTE_CONTINUED, $NOTE_START] = ($TRUE, $notes[$x][$y][$NOTE_START]);
         } else {
-            $notes[$notes[$x][$y][2]][$y][3] = $_  - $notes[$x][$y][2];
+            $notes[$notes[$x][$y][$NOTE_START]][$y][$NOTE_LENGTH] = $_  - $notes[$x][$y][$NOTE_START];
             last;
         }
     }
   
-    selNote($notes[$x][$y][2], $y);
+    selNote($notes[$x][$y][$NOTE_START], $y);
 }
 
 # sets a note's selected attribute to true
@@ -282,15 +291,15 @@ sub selNote {
     # show volume slider for selected note
     $volReveal->show();
     $volReveal->set_reveal_child(1);
-    if (!$notes[$notes[$x][$y][2]][$y][4]) {
-        $notes[$notes[$x][$y][2]][$y][4] = $defaultVol;
+    if (!$notes[$notes[$x][$y][$NOTE_START]][$y][$NOTE_VOLUME]) {
+        $notes[$notes[$x][$y][$NOTE_START]][$y][$NOTE_VOLUME] = $defaultVol;
     }
-    $volSlider->get_adjustment()->set_value($notes[$notes[$x][$y][2]][$y][4]);
+    $volSlider->get_adjustment()->set_value($notes[$notes[$x][$y][$NOTE_START]][$y][$NOTE_VOLUME]);
 }
 
 # changes volume attribute of a note
 sub volChanged {
-    $notes[$selSingle[0]][$selSingle[1]][4] = shift->get_value();
+    $notes[$selSingle[0]][$selSingle[1]][$NOTE_VOLUME] = shift->get_value();
 }
 
 # gets the actual MIDI data for output
@@ -301,17 +310,17 @@ sub getMIDI {
 
     for (0 .. 127) {
         if (is_Enabled(0, $_)) {
-            push (@events, ['note_on', 0, 0, 127 - $_, $notes[0][$_][4]]);
+            push (@events, ['note_on', 0, 0, 127 - $_, $notes[0][$_][$NOTE_VOLUME]]);
         }
     }
     my $delta = $cellTime;
     for my $incx (1 .. $numCells) {
         for my $incy (0 .. 127) {
             if (!is_Enabled($incx, $incy) && is_Enabled($incx - 1, $incy)) {
-                push (@events, ['note_off', $delta, 0, 127 - $incy, $notes[$notes[$incx - 1][$incy][2]][$incy][4]]);
+                push (@events, ['note_off', $delta, 0, 127 - $incy, $notes[$notes[$incx - 1][$incy][$NOTE_START]][$incy][$NOTE_VOLUME]]);
                 $delta = 0;
             } elsif (is_Enabled($incx, $incy) && !is_Enabled($incx - 1, $incy)) {
-                push (@events, ['note_on', $delta, 0, 127 - $incy, $notes[$incx][$incy][4]]);
+                push (@events, ['note_on', $delta, 0, 127 - $incy, $notes[$incx][$incy][$NOTE_VOLUME]]);
                 $delta = 0;
             }
         }
@@ -329,16 +338,11 @@ sub get_volReveal {
 # tells us whether a cell contains (part of) a note
 sub is_Enabled {
     my ($x, $y) = @_;
-    if ($notes[$x][$y][0]) {
-        return 1;
+    if ($notes[$x][$y][$NOTE_ENABLED]) {
+        return $TRUE;
     } else {
-        return 0;
+        return $FALSE;
     }
-}
-
-# ask for mouse events from the DrawingArea
-sub set_mouse_events {
-    $this->get_window()->set_events(['button-press-mask', 'button-motion-mask', 'button-release-mask']);
 }
 
 package main;
@@ -546,8 +550,8 @@ sub app_build {
     $grid->attach($mainWidget, 0, 2, 4, 1);
   
     # make the main widget fill available space
-    $mainWidget->set_hexpand(1);
-    $mainWidget->set_vexpand(1);
+    $mainWidget->set_hexpand($TRUE);
+    $mainWidget->set_vexpand($TRUE);
 
     my $saveAsAction = Glib::IO::SimpleAction->new('saveas', undef);
     $saveAsAction->signal_connect('activate' => \&midiWrite, [$mainWidget, $patchCombo, 24, $window]);
@@ -561,7 +565,7 @@ sub app_build {
     $window->signal_connect('delete_event' => sub {$app->quit()});
 
     $window->show_all();
-    $mainWidget->get_volReveal()->set_reveal_child(0);
+    $mainWidget->get_volReveal()->set_reveal_child($FALSE);
     $mainWidget->get_volReveal()->hide();
 }
 
@@ -569,5 +573,3 @@ my $app = Gtk3::Application->new('com.oldtechaa.seekmidi', 'flags-none');
 
 $app->signal_connect('activate' => \&app_build);
 $app->run();
-
-0;
