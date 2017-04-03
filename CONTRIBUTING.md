@@ -19,12 +19,12 @@ Follow [these directions](https://help.github.com/articles/cloning-a-repository/
 Here are some guidelines on coding style for changes:
 
  * Follow [perlstyle](https://perldoc.perl.org/perlstyle.html). This trumps anything written here.
+ 
+ * Follow Perl::Critic recommendations.
 
- * Functions should be called in this style: $foo->bar()
+ * User subroutines should be called in this style: $foo->bar() or bar()
 
- * Keywords and built-ins should be called in this style: for ()
-
- * Properties of an object should not use parentheses, like this: $foo->bar
+ * Built-in functions requiring parentheses should be styled as: for ()
 
  * Use perlish fors when possible, declaring the count variable before the opening parentheses. C-style loops should generally be avoided.
 
