@@ -4,6 +4,7 @@ Notable changes will be documented here. This changelog follows the format from 
 ## [Unreleased]
 ### Added
 - Patch change support.
+- Depends on Readonly for constants.
 
 ### Changed
 - Switch to using GTK+3 instead of GTK+2.
