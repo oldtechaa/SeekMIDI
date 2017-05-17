@@ -27,6 +27,7 @@ use strict;
 use Gtk3;
 use Pango;
 use Readonly;
+use POSIX;
 use base 'Gtk3::Box';
 
 our $VERSION = 0.03;
@@ -69,6 +70,7 @@ my @select_single = (-1, -1);
 
 # set some global constants
 my ($cell_width, $cell_height, $number_of_cells, $cell_time, $default_volume) = (12, 8, 2400, 6, 127);
+my ($xindent, $yindent) = (3 * $cell_width, 2 * $cell_height);
 
 # sets up the class; asks for the signals we need; sets main widget size
 sub new {
@@ -109,83 +111,81 @@ sub new {
 }
 
 # refresh handler; handles drawing grid and objects
-# NOTE: $xmin, $ymin refer to grid area coordinates, NOT global drawing area coordinates. 3 cells on the left and 2 on top are taken by sidebar and header
 sub refresh {
     # gets Cairo context
     my ($this, $cairo) = @_;
 
+	# set up increment variable and current clip extents
+	my $inc;
+    my ($xmin, $ymin, $xmax, $ymax) = (($cairo->clip_extents())[0], ($cairo->clip_extents())[1], ($cairo->clip_extents())[2], ($cairo->clip_extents())[3]);
+	Readonly my $CELLS_PER_WHOLE => 96 / $cell_time;
+
     # sets drawing color for main grid
     $cairo->set_source_rgb(0.75, 0.75, 0.75);
 
-    # get the current scroll positions and size of the window, then convert to grid-blocks, adjusting to draw surrounding blocks also, and make sure we don't go out of bounds
-    my ($xmin, $ymin, $xmax, $ymax) = (int(($cairo->clip_extents())[0] / $cell_width) + 3, int(($cairo->clip_extents())[1] / $cell_height) + 2, int(($cairo->clip_extents())[2] / $cell_width), int(($cairo->clip_extents())[3] / $cell_height));
-
     # these two loops create the background grid
-    for ($xmin .. $xmax) {
-        $cairo->move_to($_ * $cell_width, $ymin * $cell_height);
-        $cairo->line_to($_ * $cell_width, $ymax * $cell_height);
+    for ($inc = POSIX::ceil(($xmin + $xindent) / $cell_width) * $cell_width; $inc <= $xmax; $inc += $cell_width) {
+        $cairo->move_to($inc, $ymin + $yindent);
+        $cairo->line_to($inc, $ymax);
     }
-    for ($ymin .. $ymax) {
-        $cairo->move_to($xmin * $cell_width, $_ * $cell_height);
-        $cairo->line_to($xmax * $cell_width, $_ * $cell_height);
+    for ($inc = POSIX::ceil(($ymin + $yindent) / $cell_height) * $cell_height; $inc <= $ymax; $inc += $cell_height) {
+        $cairo->move_to($xmin + $xindent, $inc);
+        $cairo->line_to($xmax, $inc);
     }
-
-    # the grid must be drawn before we start redrawing the key objects
     $cairo->stroke();
 
     $cairo->set_source_rgb(0.5, 0.5, 0.5);
 
-    # set up Pango for time header
+    # set up Pango for time header tray
     my $pango = Pango::Cairo::create_layout($cairo);
     my $pango_attributes = Pango::AttrList->new();
     $pango_attributes->insert(Pango::AttrSize->new(8192));
     $pango->set_attributes($pango_attributes);
-
-    # draw time header and darker lines on time divisions
-    for ($xmin - 3 .. $xmax - 3) {
-        if ($_ % (96 / $cell_time) == 0) {
-            $cairo->move_to(($_ + 3) * $cell_width, $ymin * $cell_height);
-            $cairo->line_to(($_ + 3) * $cell_width, $ymax * $cell_height);
-
-            $pango->set_text($_ / (96 / $cell_time));
-            my ($pango_width, $pango_height) = $pango->get_size();
-            $cairo->move_to($_ * $cell_width - $pango_width / Pango->scale() / 2 + 3 * $cell_width, $ymin * $cell_height - ($cell_height * 1.5));
-            Pango::Cairo::show_layout($cairo, $pango);
-        }
+    
+    # draw time header tray
+    # the for init takes xmin (pixel), converts to cell, rounds up to whole note, re-multiplies to pixel of xmin visible whole note boundary
+    # the for iterator adds the number of pixels in a whole note
+    for ($inc = POSIX::ceil($xmin / $cell_width / $CELLS_PER_WHOLE) * $CELLS_PER_WHOLE * $cell_width + $xindent; $inc <= $xmax; $inc += $CELLS_PER_WHOLE * $cell_width) {
+        $pango->set_text(($inc - $xindent) / $cell_width / $CELLS_PER_WHOLE);
+        my ($pango_width, $pango_height) = $pango->get_size();
+        $cairo->move_to($inc - $pango_width / Pango->scale() / 2, $ymin + $yindent - ($cell_height * 1.5));
+        Pango::Cairo::show_layout($cairo, $pango);
+        
+        $cairo->move_to($inc, $ymin + $yindent);
+        $cairo->line_to($inc, $ymax);
     }
-
-    # draw darker top and bottom lines
-    if ($ymin == 2) {
-        $cairo->move_to($xmin * $cell_width, 2 * $cell_height);
-        $cairo->line_to($xmax * $cell_width, 2 * $cell_height);
+    
+    # draw darker ymin and ymax lines
+    if ($ymin == 0) {
+        $cairo->move_to($xmin + $xindent, $yindent);
+        $cairo->line_to($xmax, $yindent);
     }
-    if ($ymax == 130) {
-        $cairo->move_to($xmin * $cell_width, 130 * $cell_height);
-        $cairo->line_to($xmax * $cell_width, 130 * $cell_height);
+    if ($ymax == 130 * $cell_height) {
+        $cairo->move_to($xmin + $xindent, $ymax);
+        $cairo->line_to($xmax, $ymax);
     }
-
-    # stroke the darker lines
+    
     $cairo->stroke();
 
     # create the piano key sidebar
     $cairo->set_source_rgb(0, 0, 0);
-    for ($ymin .. $ymax - 1) {
-        if ($KEYS[127 - ($_ - 2)] == $TRUE) {
-            $cairo->rectangle(($xmin - 3) * $cell_width, $_ * $cell_height + 1, ($cell_width * 3) * 0.8, $cell_height * 0.75);
+    for ($inc = POSIX::floor(($ymin + $yindent) / $cell_height) * $cell_height; $inc <= $ymax; $inc += $cell_height) {
+        if ($KEYS[127 - ($inc / $cell_height - 2)] == $TRUE) {
+            $cairo->rectangle($xmin, $inc + 1, ($cell_width * 3) * 0.8, $cell_height * 0.75);
         }
     }
 
     # this checks for events with their state set to true, then draws them, scanning the leftmost column first, then all others
-    for ($ymin .. $ymax - 1) {
-        if (is_enabled($xmin - 3, $_ - 2)) {
-            my $start_note = $notes[$xmin - 3][$_ - 2][$NOTE_START];
-            $cairo->rectangle($xmin * $cell_width, $_ * $cell_height, ($notes[$start_note][$_ - 2][$NOTE_LENGTH] - (($xmin - 3) - $start_note)) * $cell_width, $cell_height);
+    for ($inc = POSIX::floor($ymin / $cell_height); $inc <= ($ymax - $yindent) / $cell_height; $inc++) {
+        if (is_enabled(POSIX::floor($xmin / $cell_width), $inc)) {
+            my $start_note = $notes[POSIX::floor($xmin / $cell_width)][$inc][$NOTE_START];
+            $cairo->rectangle(POSIX::floor($xmin / $cell_width) * $cell_width + $xindent, $inc * $cell_height + $yindent, $notes[$start_note][$inc][$NOTE_LENGTH] * $cell_width, $cell_height);
         }
     }
-    for my $incx ($xmin + 1 .. $xmax - 1) {
-        for my $incy ($ymin .. $ymax - 1) {
-            if (is_enabled($incx - 3, $incy - 2) && $notes[$incx - 3][$incy - 2][$NOTE_CONTINUED] == $FALSE) {
-                $cairo->rectangle($incx * $cell_width, $incy * $cell_height, $notes[$incx - 3][$incy - 2][$NOTE_LENGTH] * $cell_width, $cell_height);
+    for (my $incx = POSIX::floor($xmin / $cell_width + 1) * $cell_width; $incx <= ($xmax - $xindent) / $cell_width; $incx++) {
+        for (my $incy = POSIX::floor($ymin / $cell_height) * $cell_height; $incy <= ($ymax - $yindent) / $cell_height; $incy++) {
+            if (is_enabled($incx, $incy) && $notes[$incx][$incy][$NOTE_CONTINUED] == $FALSE) {
+                $cairo->rectangle($incx * $cell_width + $xindent, $incy * $cell_height + $yindent, $notes[$incx][$incy][$NOTE_LENGTH] * $cell_width, $cell_height);
             }
         }
     }
