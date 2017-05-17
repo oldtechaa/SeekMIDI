@@ -118,7 +118,7 @@ sub refresh {
     # set up increment variable and current clip extents
     my $inc;
     my ($xmin, $ymin, $xmax, $ymax) = (($cairo->clip_extents())[0], ($cairo->clip_extents())[1], ($cairo->clip_extents())[2], ($cairo->clip_extents())[3]);
-	Readonly my $CELLS_PER_WHOLE => 96 / $cell_time;
+    Readonly my $CELLS_PER_WHOLE => 96 / $cell_time;
 
     # sets drawing color for main grid
     $cairo->set_source_rgb(0.75, 0.75, 0.75);
