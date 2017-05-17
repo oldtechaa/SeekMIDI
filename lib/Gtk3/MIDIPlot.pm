@@ -115,8 +115,8 @@ sub refresh {
     # gets Cairo context
     my ($this, $cairo) = @_;
 
-	# set up increment variable and current clip extents
-	my $inc;
+    # set up increment variable and current clip extents
+    my $inc;
     my ($xmin, $ymin, $xmax, $ymax) = (($cairo->clip_extents())[0], ($cairo->clip_extents())[1], ($cairo->clip_extents())[2], ($cairo->clip_extents())[3]);
 	Readonly my $CELLS_PER_WHOLE => 96 / $cell_time;
 
