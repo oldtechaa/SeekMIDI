@@ -18,23 +18,13 @@ Follow [these directions](https://help.github.com/articles/cloning-a-repository/
 
 Here are some guidelines on coding style for changes:
 
- * Follow [perlstyle](https://perldoc.perl.org/perlstyle.html). This trumps anything written here.
+ * Use Perl::Critic at severity 5 (gentle) on _every_ commit.
 
- * Functions should be called in this style: $foo->bar()
+ * Use Perl::Tidy with default settings on _every_ commit.
 
- * Keywords and built-ins should be called in this style: for ()
+ * Follow [perlstyle](https://perldoc.perl.org/perlstyle.html), _including_ the substantive style guidelines, especially regarding naming.
 
- * Properties of an object should not use parentheses, like this: $foo->bar
-
- * Use perlish fors when possible, declaring the count variable before the opening parentheses. C-style loops should generally be avoided.
-
- * Use good judgement when choosing to optimise for performance versus readability. If some "performance optimisation" is not generally accepted as improving performance and harms readability, don't use it.
-
- * Use single quotes when not including variables to be escaped, double quotes if including escaped variables.
-
- * Comment your code as you add major new features.
- 
- * For anything not mentioned here, take a look at the existing code for examples of how to format things.
+ * Anything not addressed by one of these rules or by the example set by the existing code will be ultimately judged by oldtechaa.
 
 ### Submitting Pull Requests ###
 
