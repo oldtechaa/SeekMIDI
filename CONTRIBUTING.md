@@ -90,4 +90,4 @@ Whatever type of contribution you made, thank you very much for your assistance.
 
 ### Legal ###
 
-By submitting contributions in code form to this project, you agree to license your contributions under the GPLv3+ license. By licensing your code in this way, you grant us the rights to incorporate the code in SeekMIDI. You retain your copyright and will be credited for your contribution.
+By submitting contributions in code form to this project, you agree to license your contributions under the same license as the Perl 5 programming language. By licensing your code in this way, you grant us the rights to incorporate the code in SeekMIDI. You retain your copyright and will be credited for your contribution.
