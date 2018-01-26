@@ -10,7 +10,7 @@ __Please keep in mind that SeekMIDI is still alpha software and features are con
 
 See [the wiki](https://github.com/oldtechaa/SeekMIDI/wiki/HowTo:-Install-and-Run).
 
-We will soon have a full automated setup procedure for SeekMIDI. There are no plans to port it to Windows or OS X at this moment, although a third-party port would not be discouraged.
+We will soon have a full automated setup procedure for SeekMIDI. There are no plans to ensure compatibility with Windows or OS X at this moment, although anyone who wished to do so would not be discouraged.
 
 ### Contribution guidelines ###
 
