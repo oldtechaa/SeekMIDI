@@ -13,7 +13,7 @@ package App::SeekMIDI::Widget v0.03;
 
 # invoke dependency modules
 use Gtk3;
-use base 'Gtk3::Box';
+use parent 'Gtk3::Box';
 use Pango;
 
 my ( $TRUE, $FALSE ) = ( 1, 0 );
