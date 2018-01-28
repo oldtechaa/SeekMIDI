@@ -9,7 +9,7 @@
 use warnings;
 use strict;
 
-package SeekMIDI::Widget v0.03;
+package SeekMIDI::Widget 0.03;
 
 # invoke dependency modules
 use Gtk3;

@@ -9,7 +9,7 @@
 use warnings;
 use strict;
 
-package main v0.03;
+package main 0.03;
 
 # append to @INC the local library directory for MIDI.pm and SeekMIDI::Widget
 use FindBin;
