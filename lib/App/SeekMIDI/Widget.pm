@@ -9,12 +9,13 @@
 use warnings;
 use strict;
 
-package SeekMIDI::Widget 0.03;
+package App::SeekMIDI::Widget 0.03;
 
 # invoke dependency modules
 use Gtk3;
-use parent 'Gtk3::Box';
 use Pango;
+
+push @App::SeekMIDI::Widget::ISA, 'Gtk3::Box';
 
 my ( $TRUE, $FALSE ) = ( 1, 0 );
 my ( $ENABLED, $CONTINUED, $START, $LENGTH, $VOLUME ) = ( 0, 1, 2, 3, 4 );
