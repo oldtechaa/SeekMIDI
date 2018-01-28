@@ -21,7 +21,7 @@ use Gtk3;
 
 # use Locale::gettext;
 
-use SeekMIDI::Widget;
+use App::SeekMIDI::Widget;
 
 use Glib::Object::Introspection;
 Glib::Object::Introspection->setup(
@@ -228,7 +228,7 @@ sub app_build {
     patch_init($patch_combo);
 
     # creates main widget
-    my $main_widget = SeekMIDI::Widget->new();
+    my $main_widget = App::SeekMIDI::Widget->new();
     $grid->attach( $main_widget, 0, 2, 1, 1 );
 
     # make the main widget fill available space

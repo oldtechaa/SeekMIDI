@@ -13,7 +13,7 @@ package SeekMIDI::Widget 0.03;
 
 # invoke dependency modules
 use Gtk3;
-use base 'Gtk3::Box';
+use parent 'Gtk3::Box';
 use Pango;
 
 my ( $TRUE, $FALSE ) = ( 1, 0 );
@@ -79,12 +79,12 @@ sub new {
     $Vol_Reveal->add($box_v);
     $Vol_Reveal->set_transition_type('slide_right');
 
-    $This->signal_connect( 'draw' => 'SeekMIDI::Widget::refresh' );
-    $This->signal_connect( 'button_press_event' => 'SeekMIDI::Widget::button' );
+    $This->signal_connect( 'draw' => 'App::SeekMIDI::Widget::refresh' );
+    $This->signal_connect( 'button_press_event' => 'App::SeekMIDI::Widget::button' );
     $This->signal_connect(
-        'motion_notify_event' => 'SeekMIDI::Widget::motion' );
+        'motion_notify_event' => 'App::SeekMIDI::Widget::motion' );
     $This->signal_connect(
-        'button_release_event' => 'SeekMIDI::Widget::release' );
+        'button_release_event' => 'App::SeekMIDI::Widget::release' );
     $This->signal_connect(
         'realize' => sub {
             $This->get_window()->set_events(
@@ -102,7 +102,7 @@ sub new {
         'value_changed' => sub { $This->queue_draw() } );
 
     $Vol_Scale->get_adjustment->signal_connect(
-        'value_changed' => 'SeekMIDI::Widget::vol_changed' );
+        'value_changed' => 'App::SeekMIDI::Widget::vol_changed' );
 
     $This->set_size_request( ( $Num_Cells + 3 ) * $Cell_Width,
         130 * $Cell_Height );
@@ -120,7 +120,7 @@ sub refresh {
     # sets drawing color for main grid
     $cairo->set_source_rgb( 0.75, 0.75, 0.75 );
 
-# get the current scroll positions and size of the window, then convert to grid-blocks, adjusting to draw surrounding blocks also, and make sure we don't go out of bounds
+    # get the current scroll positions and size of the window, then convert to grid-blocks, adjusting to draw surrounding blocks also, and make sure we don't go out of bounds
     my ( $xmin, $ymin, $xmax, $ymax ) = (
         int( ( $cairo->clip_extents() )[0] / $Cell_Width ) + 3,
         int( ( $cairo->clip_extents() )[1] / $Cell_Height ) + 2,
