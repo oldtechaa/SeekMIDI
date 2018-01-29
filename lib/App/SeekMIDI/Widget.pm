@@ -24,7 +24,7 @@ my ( $ENABLED, $CONTINUED, $START, $LENGTH, $VOLUME ) = ( 0, 1, 2, 3, 4 );
 my @Notes;
 
 # set up package-global variables for widgets that need to be accessed throughout the package
-my $This;
+my $Draw_Area;
 my $Scroll;
 my $Vol_Scale;
 my $Vol_Reveal;
@@ -60,7 +60,7 @@ my ( $Cell_Width, $Cell_Height, $Num_Cells, $Cell_Time, $Vol_Preset ) =
 
 # sets up the class; asks for the signals we need; sets main widget size
 sub new {
-    $This = Gtk3::DrawingArea->new();
+    $Draw_Area = Gtk3::DrawingArea->new();
     my $box_h = bless Gtk3::Box->new( 'horizontal', 0 ), shift;
     $Scroll = Gtk3::ScrolledWindow->new();
     my $box_v = Gtk3::Box->new( 'vertical', 0 );
@@ -73,22 +73,22 @@ sub new {
     $box_h->pack_start( $Scroll,     $TRUE,  $TRUE,  0 );
     $box_h->pack_start( $Vol_Reveal, $FALSE, $FALSE, 0 );
 
-    $Scroll->add_with_viewport($This);
+    $Scroll->add_with_viewport($Draw_Area);
 
     $box_v->pack_start( $vol_label, $FALSE, $FALSE, 0 );
     $box_v->pack_start( $Vol_Scale, $TRUE,  $TRUE,  0 );
     $Vol_Reveal->add($box_v);
     $Vol_Reveal->set_transition_type('slide_right');
 
-    $This->signal_connect( 'draw' => 'App::SeekMIDI::Widget::refresh' );
-    $This->signal_connect( 'button_press_event' => 'App::SeekMIDI::Widget::button' );
-    $This->signal_connect(
+    $Draw_Area->signal_connect( 'draw' => 'App::SeekMIDI::Widget::refresh' );
+    $Draw_Area->signal_connect( 'button_press_event' => 'App::SeekMIDI::Widget::button' );
+    $Draw_Area->signal_connect(
         'motion_notify_event' => 'App::SeekMIDI::Widget::motion' );
-    $This->signal_connect(
+    $Draw_Area->signal_connect(
         'button_release_event' => 'App::SeekMIDI::Widget::release' );
-    $This->signal_connect(
+    $Draw_Area->signal_connect(
         'realize' => sub {
-            $This->get_window()->set_events(
+            $Draw_Area->get_window()->set_events(
                 [
                     'button-press-mask', 'button-motion-mask',
                     'button-release-mask'
@@ -98,14 +98,14 @@ sub new {
     );
 
     $Scroll->get_hadjustment->signal_connect(
-        'value_changed' => sub { $This->queue_draw() } );
+        'value_changed' => sub { $Draw_Area->queue_draw() } );
     $Scroll->get_vadjustment->signal_connect(
-        'value_changed' => sub { $This->queue_draw() } );
+        'value_changed' => sub { $Draw_Area->queue_draw() } );
 
     $Vol_Scale->get_adjustment->signal_connect(
         'value_changed' => 'App::SeekMIDI::Widget::vol_changed' );
 
-    $This->set_size_request( ( $Num_Cells + 3 ) * $Cell_Width,
+    $Draw_Area->set_size_request( ( $Num_Cells + 3 ) * $Cell_Width,
         130 * $Cell_Height );
 
     return $box_h;
@@ -253,7 +253,7 @@ sub button {
             else {
                 # add a note and refresh
                 add_note( $x, $y );
-                $This->queue_draw();
+                $Draw_Area->queue_draw();
 
                 $Drag_Row = $y;
             }
@@ -284,7 +284,7 @@ sub button {
             # hide volume slider
             $Vol_Reveal->set_reveal_child($FALSE);
             $Vol_Reveal->hide();
-            $This->queue_draw();
+            $Draw_Area->queue_draw();
         }
     }
 }
@@ -307,7 +307,7 @@ sub motion {
     if ( defined($Drag_Row) ) {
         if ( $xcell >= $xmin ) {
             add_note( $x, $Drag_Row );
-            $This->queue_draw();
+            $Draw_Area->queue_draw();
         }
     }
 }
